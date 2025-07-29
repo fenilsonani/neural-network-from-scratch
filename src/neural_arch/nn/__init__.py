@@ -5,7 +5,7 @@ from .embedding import Embedding
 from .normalization import LayerNorm, BatchNorm1d
 from .activation import ReLU, Softmax, Sigmoid, Tanh, GELU
 from .attention import MultiHeadAttention, SelfAttention
-from .transformer import TransformerBlock, TransformerEncoder
+from .transformer import TransformerBlock, TransformerEncoder, TransformerDecoderBlock
 from .dropout import Dropout
 from .pooling import MeanPool, MaxPool
 
@@ -32,6 +32,7 @@ __all__ = [
     # Transformer components
     "TransformerBlock",
     "TransformerEncoder",
+    "TransformerDecoderBlock",
     
     # Regularization
     "Dropout",

@@ -1,12 +1,14 @@
 {
   "d_model": 128,
   "n_heads": 4,
-  "n_layers": 3,
+  "n_layers": 2,
   "d_ff": 256,
-  "src_vocab_size": 15882,
-  "tgt_vocab_size": 22770,
-  "best_val_loss": 10.088957786560059,
-  "dataset_size": 20000,
+  "src_vocab_size": 8762,
+  "tgt_vocab_size": 11747,
+  "best_val_loss": 4.201136589050293,
+  "dataset_size": 5000,
   "batch_size": 8,
-  "epochs_trained": 16
+  "learning_rate": 0.0005,
+  "max_grad_norm": 1.0,
+  "epochs_trained": 30
 }

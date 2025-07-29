@@ -9,7 +9,7 @@ import json
 from typing import Optional
 from neural_arch.core import Tensor
 from vocabulary import Vocabulary
-from model import TranslationTransformer
+from model_v2 import TranslationTransformer
 
 
 class Translator:

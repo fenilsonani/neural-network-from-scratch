@@ -129,6 +129,9 @@ class Tensor:
             array = np.array(data)
         elif isinstance(data, (int, float)):
             array = np.array(data)
+        elif isinstance(data, (np.integer, np.floating)):
+            # Handle numpy scalar types
+            array = np.array(data)
         else:
             raise TypeError(f"Unsupported data type: {type(data)}")
         

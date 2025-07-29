@@ -1,4 +1,4 @@
-"""Optimized training script for English-Spanish translation model."""
+"""Fixed training script with gradient clipping and proper backward propagation."""
 
 import sys
 import os
@@ -8,11 +8,11 @@ import numpy as np
 import time
 import json
 from typing import List, Tuple, Dict
-from neural_arch.core import Tensor
+from neural_arch.core import Tensor, Parameter
 from neural_arch.optim import Adam
 from neural_arch.functional import cross_entropy_loss
 from vocabulary import Vocabulary, create_dataset
-from model_fixed import TranslationTransformer
+from model_v2 import TranslationTransformer
 
 
 def load_dataset(filename: str) -> List[Tuple[str, str]]:
@@ -35,16 +35,38 @@ def create_batch(data: List[List[int]], batch_size: int, pad_idx: int = 0) -> np
     return batch
 
 
+def clip_gradients(parameters, max_norm: float = 1.0):
+    """Clip gradients by global norm."""
+    # Calculate total gradient norm
+    total_norm = 0.0
+    for param in parameters:
+        if hasattr(param, 'grad') and param.grad is not None:
+            total_norm += np.sum(param.grad ** 2)
+    
+    total_norm = np.sqrt(total_norm)
+    
+    # Clip if necessary
+    if total_norm > max_norm:
+        scale = max_norm / total_norm
+        for param in parameters:
+            if hasattr(param, 'grad') and param.grad is not None:
+                param.grad *= scale
+    
+    return total_norm
+
+
 def train_epoch(model: TranslationTransformer,
                 optimizer: Adam,
                 src_data: List[List[int]],
                 tgt_data: List[List[int]],
                 batch_size: int = 8,
                 pad_idx: int = 0,
+                max_grad_norm: float = 1.0,
                 show_progress: bool = True) -> float:
-    """Train one epoch with progress tracking."""
+    """Train one epoch with gradient clipping."""
     total_loss = 0.0
     n_batches = 0
+    grad_norms = []
     
     # Shuffle data
     indices = np.random.permutation(len(src_data))
@@ -55,7 +77,8 @@ def train_epoch(model: TranslationTransformer,
     for batch_idx, i in enumerate(range(0, len(src_data), batch_size)):
         # Show progress
         if show_progress and batch_idx % 100 == 0:
-            print(f"  Batch {batch_idx}/{total_batches} ({100*batch_idx/total_batches:.1f}%)", end='\r')
+            avg_grad_norm = np.mean(grad_norms[-100:]) if grad_norms else 0
+            print(f"  Batch {batch_idx}/{total_batches} ({100*batch_idx/total_batches:.1f}%) | Grad norm: {avg_grad_norm:.3f}", end='\r')
         
         # Get batch indices
         batch_indices = indices[i:i + batch_size]
@@ -95,9 +118,19 @@ def train_epoch(model: TranslationTransformer,
             loss.backward()
             
             # Connect gradients to model output
-            if hasattr(output, 'grad'):
-                output.backward(output_tensor.grad.reshape(output.data.shape))
+            if hasattr(output, 'backward'):
+                # Create gradient tensor for the full output
+                full_grad = np.zeros_like(output_reshaped)
+                full_grad[mask] = output_tensor.grad
+                grad_reshaped = full_grad.reshape(output.data.shape)
+                output.backward(grad_reshaped)
             
+            # Clip gradients
+            params = list(model.parameters())
+            grad_norm = clip_gradients(params, max_grad_norm)
+            grad_norms.append(grad_norm)
+            
+            # Update parameters
             optimizer.step()
             
             total_loss += loss.data
@@ -119,7 +152,7 @@ def evaluate(model: TranslationTransformer,
     print("\nTranslation Examples:")
     print("-" * 60)
     
-    # Use first n_examples instead of random for consistency
+    # Use first n_examples
     for idx in range(min(n_examples, len(src_data))):
         # Get source
         src = Tensor(np.array([src_data[idx]]), requires_grad=False)
@@ -153,12 +186,7 @@ def test_common_phrases(model, src_vocab, tgt_vocab):
         "how are you",
         "thank you",
         "good morning",
-        "where is the bathroom",
-        "i love you",
-        "goodbye",
-        "yes",
-        "no",
-        "please"
+        "i love you"
     ]
     
     for phrase in test_phrases:
@@ -181,14 +209,16 @@ def test_common_phrases(model, src_vocab, tgt_vocab):
 
 def main():
     """Main training function."""
-    print("🌐 Optimized Translation Model Training")
+    print("🌐 Fixed Translation Model Training")
     print("=" * 60)
     
     # Configuration
-    DATASET_SIZE = 20000  # Medium size
-    BATCH_SIZE = 8        # Smaller batches for faster processing
-    N_EPOCHS = 50         # Reasonable number of epochs
-    MAX_SEQ_LEN = 25      # Shorter sequences for efficiency
+    DATASET_SIZE = 5000   # Start smaller for testing
+    BATCH_SIZE = 8        
+    N_EPOCHS = 30         
+    MAX_SEQ_LEN = 25      
+    LEARNING_RATE = 0.0005  # Lower learning rate
+    MAX_GRAD_NORM = 1.0     # Gradient clipping
     
     # Create vocabularies
     src_vocab = Vocabulary("english")
@@ -200,9 +230,9 @@ def main():
         all_train_pairs = load_dataset("data/train_large.json")
         all_val_pairs = load_dataset("data/val_large.json")
         
-        # Use subset for medium-sized training
+        # Use subset
         train_pairs = all_train_pairs[:DATASET_SIZE]
-        val_pairs = all_val_pairs[:2000]  # 2000 validation pairs
+        val_pairs = all_val_pairs[:1000]
         
         print(f"✅ Using {len(train_pairs)} training pairs")
         print(f"✅ Using {len(val_pairs)} validation pairs")
@@ -218,11 +248,11 @@ def main():
     print(f"Source vocabulary size: {len(src_vocab)}")
     print(f"Target vocabulary size: {len(tgt_vocab)}")
     
-    # Model configuration - Balanced for performance
-    d_model = 128   # Moderate size
-    n_heads = 4     # Moderate attention heads
-    n_layers = 3    # 3 layers for balance
-    d_ff = 256      # Feed-forward dimension
+    # Model configuration - Start smaller
+    d_model = 128   
+    n_heads = 4     
+    n_layers = 2    # Start with fewer layers
+    d_ff = 256      
     
     # Create model
     print(f"\n🤖 Creating Transformer model...")
@@ -241,22 +271,22 @@ def main():
         dropout=0.1
     )
     
-    # Create optimizer
-    optimizer = Adam(model.parameters(), lr=0.001)
+    # Create optimizer with lower learning rate
+    optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
     
     # Training info
     print(f"\n🏃 Training Configuration:")
     print(f"  - Epochs: {N_EPOCHS}")
     print(f"  - Batch size: {BATCH_SIZE}")
     print(f"  - Learning rate: {optimizer.lr}")
+    print(f"  - Gradient clipping: {MAX_GRAD_NORM}")
     print(f"  - Training batches per epoch: {len(src_data) // BATCH_SIZE}")
-    print(f"  - Estimated time per epoch: ~{(len(src_data) // BATCH_SIZE) * 0.1:.0f} seconds")
     
     best_val_loss = float('inf')
     patience = 5
     patience_counter = 0
     
-    print(f"\n🚀 Starting training...\n")
+    print(f"\n🚀 Starting training...\\n")
     
     for epoch in range(N_EPOCHS):
         epoch_start = time.time()
@@ -267,14 +297,16 @@ def main():
             model, optimizer, src_data, tgt_data, 
             batch_size=BATCH_SIZE,
             pad_idx=src_vocab.word2idx[src_vocab.pad_token],
+            max_grad_norm=MAX_GRAD_NORM,
             show_progress=True
         )
         
-        # Validation (no progress bar)
+        # Validation
         val_loss = train_epoch(
             model, optimizer, val_src_data, val_tgt_data, 
             batch_size=BATCH_SIZE,
             pad_idx=src_vocab.word2idx[src_vocab.pad_token],
+            max_grad_norm=MAX_GRAD_NORM,
             show_progress=False
         )
         
@@ -289,20 +321,20 @@ def main():
             patience_counter += 1
             print(f"  Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Time: {epoch_time:.1f}s")
         
-        # Evaluate every 10 epochs
-        if (epoch + 1) % 10 == 0:
+        # Evaluate every 5 epochs
+        if (epoch + 1) % 5 == 0:
             evaluate(model, val_src_data, val_tgt_data, src_vocab, tgt_vocab, n_examples=3)
             test_common_phrases(model, src_vocab, tgt_vocab)
         
         # Early stopping
         if patience_counter >= patience:
-            print(f"\n⚠️  Early stopping at epoch {epoch + 1}")
+            print(f"\\n⚠️  Early stopping at epoch {epoch + 1}")
             break
     
-    print("\n✅ Training complete!")
+    print("\\n✅ Training complete!")
     
     # Final evaluation
-    print("\n📊 Final Evaluation:")
+    print("\\n📊 Final Evaluation:")
     evaluate(model, val_src_data, val_tgt_data, src_vocab, tgt_vocab, n_examples=5)
     test_common_phrases(model, src_vocab, tgt_vocab)
     
@@ -320,14 +352,16 @@ def main():
         "best_val_loss": float(best_val_loss),
         "dataset_size": DATASET_SIZE,
         "batch_size": BATCH_SIZE,
+        "learning_rate": LEARNING_RATE,
+        "max_grad_norm": MAX_GRAD_NORM,
         "epochs_trained": epoch + 1
     }
     
     with open("model_config.json", 'w') as f:
         json.dump(model_info, f, indent=2)
     
-    print("\n💾 Model configuration and vocabularies saved!")
-    print("\n🎉 You can now use translate.py to test the model!")
+    print("\\n💾 Model configuration and vocabularies saved!")
+    print("\\n🎉 You can now use translate.py to test the model!")
 
 
 if __name__ == "__main__":

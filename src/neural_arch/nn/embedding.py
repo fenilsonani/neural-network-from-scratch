@@ -23,13 +23,18 @@ class Embedding(Module):
         self.weight = Parameter(weight_data, name=f"{self.name}.weight")
     
     @handle_exception
-    def forward(self, indices: np.ndarray) -> Tensor:
+    def forward(self, indices: Tensor) -> Tensor:
         """Forward pass through embedding layer."""
+        # Get numpy array from tensor
+        indices_array = indices.data if isinstance(indices, Tensor) else indices
+        
         # Simple embedding lookup
-        embedded_data = self.weight.data[indices.flatten()]
+        # Ensure indices are integers
+        indices_flat = indices_array.flatten().astype(np.int32)
+        embedded_data = self.weight.data[indices_flat]
         
         # Reshape to match input + embedding dimension
-        output_shape = list(indices.shape) + [self.embed_dim]
+        output_shape = list(indices_array.shape) + [self.embed_dim]
         embedded_data = embedded_data.reshape(output_shape)
         
         result = Tensor(embedded_data, requires_grad=self.weight.requires_grad)
