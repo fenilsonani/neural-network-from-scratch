@@ -1,0 +1,29 @@
+# Neural Architecture - Complete Implementation From Scratch
+# Minimal dependencies for maximum portability and control
+
+# Core dependency - the ONLY required external library
+numpy>=1.21.0
+
+# Optional testing dependencies (automatically detected and used if available)
+# The test suite gracefully falls back to manual execution without these
+pytest>=7.0.0            # Optional: Advanced test framework with fixtures
+pytest-xdist>=2.5.0      # Optional: Parallel test execution
+pytest-cov>=4.0.0        # Optional: Test coverage analysis
+pytest-benchmark>=4.0.0  # Optional: Performance benchmarking integration
+
+# Optional development tools (not required for core functionality)  
+black>=22.0.0             # Optional: Code formatting
+flake8>=4.0.0             # Optional: Code linting
+mypy>=1.0.0               # Optional: Static type checking
+
+# Optional visualization and analysis tools
+matplotlib>=3.5.0         # Optional: For plotting training curves and visualizations
+seaborn>=0.11.0          # Optional: Enhanced statistical plotting
+tqdm>=4.64.0             # Optional: Progress bars for long training runs
+
+# Optional development environment
+jupyter>=1.0.0           # Optional: Interactive notebooks for experimentation
+ipykernel>=6.0.0         # Optional: Jupyter kernel support
+
+# Note: This neural network implementation is designed to work with ONLY numpy
+# All other dependencies are optional and provide enhanced development experience

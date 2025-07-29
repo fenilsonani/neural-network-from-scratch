@@ -1,0 +1,826 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration Module &mdash; Neural Architecture 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Command Line Interface" href="cli.html" />
+    <link rel="prev" title="Optimization Module" href="optim.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Neural Architecture
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="functional.html">Functional Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">Neural Network Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optim.html">Optimization Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-classes">Configuration Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neural_arch.config.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.debug"><code class="docutils literal notranslate"><span class="pre">Config.debug</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.log_level"><code class="docutils literal notranslate"><span class="pre">Config.log_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.random_seed"><code class="docutils literal notranslate"><span class="pre">Config.random_seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.device"><code class="docutils literal notranslate"><span class="pre">Config.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.dtype"><code class="docutils literal notranslate"><span class="pre">Config.dtype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.num_threads"><code class="docutils literal notranslate"><span class="pre">Config.num_threads</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.memory_limit_gb"><code class="docutils literal notranslate"><span class="pre">Config.memory_limit_gb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.batch_size"><code class="docutils literal notranslate"><span class="pre">Config.batch_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.learning_rate"><code class="docutils literal notranslate"><span class="pre">Config.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.max_epochs"><code class="docutils literal notranslate"><span class="pre">Config.max_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.patience"><code class="docutils literal notranslate"><span class="pre">Config.patience</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.gradient_clipping"><code class="docutils literal notranslate"><span class="pre">Config.gradient_clipping</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.gradient_clip_value"><code class="docutils literal notranslate"><span class="pre">Config.gradient_clip_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.model_name"><code class="docutils literal notranslate"><span class="pre">Config.model_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.model_version"><code class="docutils literal notranslate"><span class="pre">Config.model_version</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.checkpoint_dir"><code class="docutils literal notranslate"><span class="pre">Config.checkpoint_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.save_frequency"><code class="docutils literal notranslate"><span class="pre">Config.save_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.data_dir"><code class="docutils literal notranslate"><span class="pre">Config.data_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.vocab_size"><code class="docutils literal notranslate"><span class="pre">Config.vocab_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.sequence_length"><code class="docutils literal notranslate"><span class="pre">Config.sequence_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.preprocessing"><code class="docutils literal notranslate"><span class="pre">Config.preprocessing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.optimizer"><code class="docutils literal notranslate"><span class="pre">Config.optimizer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.optimizer_params"><code class="docutils literal notranslate"><span class="pre">Config.optimizer_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.enable_profiling"><code class="docutils literal notranslate"><span class="pre">Config.enable_profiling</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.benchmark_mode"><code class="docutils literal notranslate"><span class="pre">Config.benchmark_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.memory_monitoring"><code class="docutils literal notranslate"><span class="pre">Config.memory_monitoring</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.performance_thresholds"><code class="docutils literal notranslate"><span class="pre">Config.performance_thresholds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.tensorboard_dir"><code class="docutils literal notranslate"><span class="pre">Config.tensorboard_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.metrics_frequency"><code class="docutils literal notranslate"><span class="pre">Config.metrics_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.log_gradients"><code class="docutils literal notranslate"><span class="pre">Config.log_gradients</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.log_weights"><code class="docutils literal notranslate"><span class="pre">Config.log_weights</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.experiment_name"><code class="docutils literal notranslate"><span class="pre">Config.experiment_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.experiment_id"><code class="docutils literal notranslate"><span class="pre">Config.experiment_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.tags"><code class="docutils literal notranslate"><span class="pre">Config.tags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.metadata"><code class="docutils literal notranslate"><span class="pre">Config.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.__post_init__"><code class="docutils literal notranslate"><span class="pre">Config.__post_init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.update"><code class="docutils literal notranslate"><span class="pre">Config.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.merge"><code class="docutils literal notranslate"><span class="pre">Config.merge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.to_dict"><code class="docutils literal notranslate"><span class="pre">Config.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.to_json"><code class="docutils literal notranslate"><span class="pre">Config.to_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.to_yaml"><code class="docutils literal notranslate"><span class="pre">Config.to_yaml()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.from_dict"><code class="docutils literal notranslate"><span class="pre">Config.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.from_json"><code class="docutils literal notranslate"><span class="pre">Config.from_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.from_yaml"><code class="docutils literal notranslate"><span class="pre">Config.from_yaml()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neural_arch.config.Config.__init__"><code class="docutils literal notranslate"><span class="pre">Config.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-functions">Configuration Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neural_arch.config.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neural_arch.config.save_config"><code class="docutils literal notranslate"><span class="pre">save_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neural_arch.config.get_preset_config"><code class="docutils literal notranslate"><span class="pre">get_preset_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-configuration-usage">Basic Configuration Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-configurations">Creating Configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#preset-configurations">Preset Configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file-formats">Configuration File Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#validation-and-type-checking">Validation and Type Checking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#environment-variable-integration">Environment Variable Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-inheritance">Configuration Inheritance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-with-training">Integration with Training</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-management-best-practices">Configuration Management Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preset-configurations-available">Preset Configurations Available</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../py-modindex.html">Module Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../search.html">Search Page</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Neural Architecture</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration-module">
+<h1>Configuration Module<a class="headerlink" href="#configuration-module" title="Link to this heading"></a></h1>
+<p>The config module provides enterprise-grade configuration management for Neural Architecture applications.</p>
+<section id="configuration-classes">
+<h2>Configuration Classes<a class="headerlink" href="#configuration-classes" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="neural_arch.config.Config">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">neural_arch.config.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_level='INFO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device='cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype='float32'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_limit_gb=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size=32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate=0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clipping=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clip_value=10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name='neural_arch_model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_version='1.0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_dir='./checkpoints'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_frequency=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir='./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab_size=10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_length=128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessing=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer='adam'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_params=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_profiling=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">benchmark_mode=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_monitoring=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performance_thresholds=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensorboard_dir=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_frequency=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_gradients=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_weights=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_id=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Type-safe configuration container for neural architecture.</p>
+<p>This provides enterprise-grade configuration management with:
+- Type safety and validation
+- Environment variable override support
+- Hierarchical configuration merging
+- Schema validation
+- Default value management</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.debug">
+<span class="sig-name descname"><span class="pre">debug</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#neural_arch.config.Config.debug" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.log_level">
+<span class="sig-name descname"><span class="pre">log_level</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'INFO'</span></em><a class="headerlink" href="#neural_arch.config.Config.log_level" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.random_seed">
+<span class="sig-name descname"><span class="pre">random_seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.random_seed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.device">
+<span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cpu'</span></em><a class="headerlink" href="#neural_arch.config.Config.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'float32'</span></em><a class="headerlink" href="#neural_arch.config.Config.dtype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.num_threads">
+<span class="sig-name descname"><span class="pre">num_threads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.num_threads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.memory_limit_gb">
+<span class="sig-name descname"><span class="pre">memory_limit_gb</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.memory_limit_gb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">32</span></em><a class="headerlink" href="#neural_arch.config.Config.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.001</span></em><a class="headerlink" href="#neural_arch.config.Config.learning_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.max_epochs">
+<span class="sig-name descname"><span class="pre">max_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#neural_arch.config.Config.max_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.patience">
+<span class="sig-name descname"><span class="pre">patience</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#neural_arch.config.Config.patience" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.gradient_clipping">
+<span class="sig-name descname"><span class="pre">gradient_clipping</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#neural_arch.config.Config.gradient_clipping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.gradient_clip_value">
+<span class="sig-name descname"><span class="pre">gradient_clip_value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10.0</span></em><a class="headerlink" href="#neural_arch.config.Config.gradient_clip_value" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'neural_arch_model'</span></em><a class="headerlink" href="#neural_arch.config.Config.model_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.model_version">
+<span class="sig-name descname"><span class="pre">model_version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'1.0.0'</span></em><a class="headerlink" href="#neural_arch.config.Config.model_version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.checkpoint_dir">
+<span class="sig-name descname"><span class="pre">checkpoint_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./checkpoints'</span></em><a class="headerlink" href="#neural_arch.config.Config.checkpoint_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.save_frequency">
+<span class="sig-name descname"><span class="pre">save_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#neural_arch.config.Config.save_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.data_dir">
+<span class="sig-name descname"><span class="pre">data_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./data'</span></em><a class="headerlink" href="#neural_arch.config.Config.data_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.vocab_size">
+<span class="sig-name descname"><span class="pre">vocab_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10000</span></em><a class="headerlink" href="#neural_arch.config.Config.vocab_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.sequence_length">
+<span class="sig-name descname"><span class="pre">sequence_length</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></em><a class="headerlink" href="#neural_arch.config.Config.sequence_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.preprocessing">
+<span class="sig-name descname"><span class="pre">preprocessing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#neural_arch.config.Config.preprocessing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'adam'</span></em><a class="headerlink" href="#neural_arch.config.Config.optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.optimizer_params">
+<span class="sig-name descname"><span class="pre">optimizer_params</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#neural_arch.config.Config.optimizer_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.enable_profiling">
+<span class="sig-name descname"><span class="pre">enable_profiling</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#neural_arch.config.Config.enable_profiling" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.benchmark_mode">
+<span class="sig-name descname"><span class="pre">benchmark_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#neural_arch.config.Config.benchmark_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.memory_monitoring">
+<span class="sig-name descname"><span class="pre">memory_monitoring</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#neural_arch.config.Config.memory_monitoring" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.performance_thresholds">
+<span class="sig-name descname"><span class="pre">performance_thresholds</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#neural_arch.config.Config.performance_thresholds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.tensorboard_dir">
+<span class="sig-name descname"><span class="pre">tensorboard_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.tensorboard_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.metrics_frequency">
+<span class="sig-name descname"><span class="pre">metrics_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#neural_arch.config.Config.metrics_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.log_gradients">
+<span class="sig-name descname"><span class="pre">log_gradients</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#neural_arch.config.Config.log_gradients" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.log_weights">
+<span class="sig-name descname"><span class="pre">log_weights</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#neural_arch.config.Config.log_weights" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.experiment_name">
+<span class="sig-name descname"><span class="pre">experiment_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.experiment_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.experiment_id">
+<span class="sig-name descname"><span class="pre">experiment_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#neural_arch.config.Config.experiment_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.tags">
+<span class="sig-name descname"><span class="pre">tags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#neural_arch.config.Config.tags" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="neural_arch.config.Config.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#neural_arch.config.Config.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.__post_init__">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.__post_init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.__post_init__" title="Link to this definition"></a></dt>
+<dd><p>Validate configuration after initialization.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.update" title="Link to this definition"></a></dt>
+<dd><p>Update configuration with new values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Configuration values to update</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New Config instance with updated values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.merge">
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.merge" title="Link to this definition"></a></dt>
+<dd><p>Merge with another configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span>) – Configuration to merge</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New Config instance with merged values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.to_dict" title="Link to this definition"></a></dt>
+<dd><p>Convert configuration to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.to_json" title="Link to this definition"></a></dt>
+<dd><p>Convert configuration to JSON string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.to_yaml">
+<span class="sig-name descname"><span class="pre">to_yaml</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.to_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.to_yaml" title="Link to this definition"></a></dt>
+<dd><p>Convert configuration to YAML string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.from_dict" title="Link to this definition"></a></dt>
+<dd><p>Create configuration from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.from_json">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.from_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.from_json" title="Link to this definition"></a></dt>
+<dd><p>Create configuration from JSON string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.from_yaml">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yaml_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#Config.from_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.Config.from_yaml" title="Link to this definition"></a></dt>
+<dd><p>Create configuration from YAML string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_arch.config.Config.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_level='INFO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device='cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype='float32'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_limit_gb=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size=32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate=0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clipping=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clip_value=10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name='neural_arch_model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_version='1.0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_dir='./checkpoints'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_frequency=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir='./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab_size=10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_length=128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessing=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer='adam'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_params=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_profiling=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">benchmark_mode=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_monitoring=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performance_thresholds=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensorboard_dir=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_frequency=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_gradients=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_weights=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_id=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_arch.config.Config.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="configuration-functions">
+<h2>Configuration Functions<a class="headerlink" href="#configuration-functions" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="neural_arch.config.load_config">
+<span class="sig-prename descclassname"><span class="pre">neural_arch.config.</span></span><span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NEURAL_ARCH_'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.load_config" title="Link to this definition"></a></dt>
+<dd><p>Load configuration with file and environment overrides.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_file</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code>, <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]</span>) – Optional configuration file path</p></li>
+<li><p><strong>env_prefix</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Environment variable prefix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Complete configuration</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neural_arch.config.save_config">
+<span class="sig-prename descclassname"><span class="pre">neural_arch.config.</span></span><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/config.html#save_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.save_config" title="Link to this definition"></a></dt>
+<dd><p>Save configuration to file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span>) – Configuration to save</p></li>
+<li><p><strong>file_path</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code>]</span>) – File path to save to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neural_arch.config.get_preset_config">
+<span class="sig-prename descclassname"><span class="pre">neural_arch.config.</span></span><span class="sig-name descname"><span class="pre">get_preset_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preset_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/config/defaults.html#get_preset_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.config.get_preset_config" title="Link to this definition"></a></dt>
+<dd><p>Get a preset configuration by name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>preset_name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Name of the preset configuration</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#neural_arch.config.Config" title="neural_arch.config.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Configuration preset</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – If preset name is not found</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="basic-configuration-usage">
+<h3>Basic Configuration Usage<a class="headerlink" href="#basic-configuration-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">neural_arch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">na</span>
+
+<span class="c1"># Load configuration from file</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;config.yaml&#39;</span><span class="p">)</span>
+
+<span class="c1"># Access configuration values</span>
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">learning_rate</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">batch_size</span>
+<span class="n">model_type</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">type</span>
+
+<span class="c1"># Use in model creation</span>
+<span class="k">if</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">create_transformer_model</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s1">&#39;mlp&#39;</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">create_mlp_model</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-configurations">
+<h3>Creating Configurations<a class="headerlink" href="#creating-configurations" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create configuration programmatically</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">Config</span><span class="p">({</span>
+    <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;transformer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;d_model&#39;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+        <span class="s1">&#39;num_heads&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="s1">&#39;num_layers&#39;</span><span class="p">:</span> <span class="mi">6</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+        <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="s1">&#39;adam&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;train_path&#39;</span><span class="p">:</span> <span class="s1">&#39;data/train.txt&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;val_path&#39;</span><span class="p">:</span> <span class="s1">&#39;data/val.txt&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;vocab_size&#39;</span><span class="p">:</span> <span class="mi">10000</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+
+<span class="c1"># Save configuration</span>
+<span class="n">na</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;my_config.yaml&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="preset-configurations">
+<h3>Preset Configurations<a class="headerlink" href="#preset-configurations" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get preset configurations for common scenarios</span>
+
+<span class="c1"># Small transformer for experimentation</span>
+<span class="n">small_config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">get_preset_config</span><span class="p">(</span><span class="s1">&#39;transformer_small&#39;</span><span class="p">)</span>
+
+<span class="c1"># Large model for production</span>
+<span class="n">large_config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">get_preset_config</span><span class="p">(</span><span class="s1">&#39;transformer_large&#39;</span><span class="p">)</span>
+
+<span class="c1"># Simple MLP configuration</span>
+<span class="n">mlp_config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">get_preset_config</span><span class="p">(</span><span class="s1">&#39;mlp_basic&#39;</span><span class="p">)</span>
+
+<span class="c1"># Print available presets</span>
+<span class="n">presets</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">get_preset_config</span><span class="p">(</span><span class="s1">&#39;list&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available presets:&quot;</span><span class="p">,</span> <span class="n">presets</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="configuration-file-formats">
+<h3>Configuration File Formats<a class="headerlink" href="#configuration-file-formats" title="Link to this heading"></a></h3>
+<p>YAML format (recommended):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># config.yaml</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span>
+<span class="w">  </span><span class="nt">d_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="w">  </span><span class="nt">num_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">num_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="w">  </span><span class="nt">dropout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+
+<span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">  </span><span class="nt">optimizer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adam</span>
+<span class="w">  </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/train.txt</span>
+<span class="w">  </span><span class="nt">val_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/val.txt</span>
+<span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="w">  </span><span class="nt">max_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+</pre></div>
+</div>
+<p>JSON format:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hidden_sizes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">512</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="mi">128</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;activation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;relu&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dropout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.2</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;training&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;epochs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="validation-and-type-checking">
+<h3>Validation and Type Checking<a class="headerlink" href="#validation-and-type-checking" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration with validation</span>
+<span class="n">config_schema</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;model.d_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">2048</span><span class="p">},</span>
+    <span class="s1">&#39;model.num_heads&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">},</span>
+    <span class="s1">&#39;training.learning_rate&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="s1">&#39;training.batch_size&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># Load and validate configuration</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;config.yaml&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">config_schema</span><span class="p">)</span>
+
+<span class="c1"># Configuration will raise ValidationError if invalid</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">Config</span><span class="p">({</span><span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">}})</span>  <span class="c1"># Too high</span>
+<span class="k">except</span> <span class="n">na</span><span class="o">.</span><span class="n">ConfigValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid configuration: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="environment-variable-integration">
+<h3>Environment Variable Integration<a class="headerlink" href="#environment-variable-integration" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration can use environment variables</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">Config</span><span class="p">({</span>
+    <span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="s1">&#39;$</span><span class="si">{LEARNING_RATE:0.001}</span><span class="s1">&#39;</span><span class="p">,</span>  <span class="c1"># Default to 0.001</span>
+        <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="s1">&#39;$</span><span class="si">{BATCH_SIZE:32}</span><span class="s1">&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;device&#39;</span><span class="p">:</span> <span class="s1">&#39;${DEVICE:cpu}&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;data_path&#39;</span><span class="p">:</span> <span class="s1">&#39;$</span><span class="si">{DATA_PATH}</span><span class="s1">&#39;</span><span class="p">,</span>  <span class="c1"># Required environment variable</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+
+<span class="c1"># Environment variables are resolved when accessed</span>
+<span class="n">lr</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">learning_rate</span>  <span class="c1"># Uses env var or default</span>
+</pre></div>
+</div>
+</section>
+<section id="configuration-inheritance">
+<h3>Configuration Inheritance<a class="headerlink" href="#configuration-inheritance" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Base configuration</span>
+<span class="n">base_config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">Config</span><span class="p">({</span>
+    <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;transformer&#39;</span><span class="p">,</span> <span class="s1">&#39;d_model&#39;</span><span class="p">:</span> <span class="mi">512</span><span class="p">},</span>
+    <span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span>
+<span class="p">})</span>
+
+<span class="c1"># Specialized configuration inheriting from base</span>
+<span class="n">experiment_config</span> <span class="o">=</span> <span class="n">base_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">experiment_config</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+    <span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.0005</span><span class="p">},</span>  <span class="c1"># Override learning rate</span>
+    <span class="s1">&#39;experiment&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;low_lr_test&#39;</span><span class="p">}</span>   <span class="c1"># Add new section</span>
+<span class="p">})</span>
+
+<span class="c1"># Save specialized configuration</span>
+<span class="n">na</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">experiment_config</span><span class="p">,</span> <span class="s1">&#39;experiment.yaml&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-with-training">
+<h3>Integration with Training<a class="headerlink" href="#integration-with-training" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Complete training setup with configuration</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;training_config.yaml&#39;</span><span class="p">)</span>
+
+<span class="c1"># Create model from config</span>
+<span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">TransformerBlock</span><span class="p">(</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">d_model</span><span class="p">,</span>
+        <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
+        <span class="n">d_ff</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">d_ff</span>
+    <span class="p">)</span>
+
+<span class="c1"># Create optimizer from config</span>
+<span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">==</span> <span class="s1">&#39;adam&#39;</span><span class="p">:</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+        <span class="n">lr</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+        <span class="n">weight_decay</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c1"># Training loop using config</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
+    <span class="c1"># Load data using config paths</span>
+    <span class="n">train_data</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">train_path</span><span class="p">)</span>
+
+    <span class="c1"># Train using config parameters</span>
+    <span class="n">train_epoch</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-management-best-practices">
+<h2>Configuration Management Best Practices<a class="headerlink" href="#configuration-management-best-practices" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>Organization</strong>:</dt><dd><ul class="simple">
+<li><p>Group related settings into sections (model, training, data)</p></li>
+<li><p>Use consistent naming conventions</p></li>
+<li><p>Document configuration options</p></li>
+</ul>
+</dd>
+<dt><strong>Validation</strong>:</dt><dd><ul class="simple">
+<li><p>Define schemas for critical parameters</p></li>
+<li><p>Validate ranges and types</p></li>
+<li><p>Provide helpful error messages</p></li>
+</ul>
+</dd>
+<dt><strong>Defaults</strong>:</dt><dd><ul class="simple">
+<li><p>Provide sensible defaults for optional parameters</p></li>
+<li><p>Use preset configurations for common scenarios</p></li>
+<li><p>Document default values</p></li>
+</ul>
+</dd>
+<dt><strong>Environment Integration</strong>:</dt><dd><ul class="simple">
+<li><p>Use environment variables for deployment-specific settings</p></li>
+<li><p>Support both development and production configurations</p></li>
+<li><p>Keep sensitive information in environment variables</p></li>
+</ul>
+</dd>
+<dt><strong>Version Control</strong>:</dt><dd><ul class="simple">
+<li><p>Track configuration files in version control</p></li>
+<li><p>Use different configs for different experiments</p></li>
+<li><p>Document configuration changes</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="preset-configurations-available">
+<h2>Preset Configurations Available<a class="headerlink" href="#preset-configurations-available" title="Link to this heading"></a></h2>
+<p>The module includes several preset configurations:</p>
+<dl class="simple">
+<dt><strong>Transformer Presets</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">transformer_small</span></code>: For experimentation and development</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transformer_base</span></code>: Standard transformer configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transformer_large</span></code>: For production and large-scale training</p></li>
+</ul>
+</dd>
+<dt><strong>MLP Presets</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mlp_basic</span></code>: Simple feedforward network</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mlp_deep</span></code>: Deep feedforward network</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mlp_wide</span></code>: Wide feedforward network</p></li>
+</ul>
+</dd>
+<dt><strong>Training Presets</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">training_fast</span></code>: Quick training for experimentation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">training_standard</span></code>: Balanced training configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">training_thorough</span></code>: Comprehensive training setup</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="optim.html" class="btn btn-neutral float-left" title="Optimization Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli.html" class="btn btn-neutral float-right" title="Command Line Interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Neural Architecture Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

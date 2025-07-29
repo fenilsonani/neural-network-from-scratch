@@ -1,0 +1,46 @@
+# Include additional files in the package distribution
+
+# Documentation files
+include README.md
+include LICENSE
+include CHANGELOG.md
+recursive-include docs *.md *.rst *.txt
+
+# Configuration files
+include pyproject.toml
+include setup.py
+include requirements.txt
+include pytest.ini
+include .gitignore
+
+# Source files
+recursive-include src *.py *.pyi
+include src/neural_arch/py.typed
+
+# Test files (for development installations)
+recursive-include tests *.py
+include run_tests.py
+include conftest.py
+
+# Examples and demos
+include simple_model.py
+recursive-include examples *.py *.md *.ipynb
+
+# CI/CD configuration
+recursive-include .github *.yml *.yaml
+
+# Exclude unwanted files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .coverage
+global-exclude htmlcov
+global-exclude dist
+global-exclude build
+global-exclude *.egg-info
+prune venv
+prune .venv

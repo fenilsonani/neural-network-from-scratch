@@ -1,0 +1,491 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>neural_arch.functional.arithmetic &mdash; Neural Architecture 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Neural Architecture
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/functional.html">Functional Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/nn.html">Neural Network Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/optim.html">Optimization Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/config.html">Configuration Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/cli.html">Command Line Interface</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../py-modindex.html">Module Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../search.html">Search Page</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Neural Architecture</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">neural_arch.functional.arithmetic</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for neural_arch.functional.arithmetic</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Arithmetic operations with automatic differentiation.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..core.tensor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">GradientFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast_tensors</span><span class="p">,</span> <span class="n">reduce_gradient</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="add">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.add">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise addition with broadcasting and gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: First operand</span>
+<span class="sd">        b: Second operand</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Result tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = a + b</span>
+<span class="sd">        ∂output/∂a = 1 (broadcasted to a.shape)</span>
+<span class="sd">        ∂output/∂b = 1 (broadcasted to b.shape)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert inputs to tensors</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># Broadcast tensors to compatible shapes</span>
+    <span class="n">a_data</span><span class="p">,</span> <span class="n">b_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">a_data</span> <span class="o">+</span> <span class="n">b_data</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;add(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for addition.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Reduce gradient to match original tensor shape</span>
+                <span class="n">grad_a</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">a_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Reduce gradient to match original tensor shape</span>
+                <span class="n">grad_b</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">b_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_b</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="s2">&quot;add&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="sub">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.sub">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sub</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise subtraction with broadcasting and gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: First operand (minuend)</span>
+<span class="sd">        b: Second operand (subtrahend)</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Result tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = a - b</span>
+<span class="sd">        ∂output/∂a = 1 (broadcasted to a.shape)</span>
+<span class="sd">        ∂output/∂b = -1 (broadcasted to b.shape)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert inputs to tensors</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># Broadcast tensors to compatible shapes</span>
+    <span class="n">a_data</span><span class="p">,</span> <span class="n">b_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">a_data</span> <span class="o">-</span> <span class="n">b_data</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;sub(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for subtraction.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="n">grad_a</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">a_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Negative gradient for subtraction</span>
+                <span class="n">grad_b</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="o">-</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">b_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_b</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="s2">&quot;sub&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sub operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="mul">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.mul">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise multiplication with broadcasting and gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: First operand</span>
+<span class="sd">        b: Second operand</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Result tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = a * b</span>
+<span class="sd">        ∂output/∂a = b (broadcasted to a.shape)</span>
+<span class="sd">        ∂output/∂b = a (broadcasted to b.shape)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert inputs to tensors</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># Broadcast tensors to compatible shapes</span>
+    <span class="n">a_data</span><span class="p">,</span> <span class="n">b_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">a_data</span> <span class="o">*</span> <span class="n">b_data</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;mul(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for multiplication.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Gradient is grad_output * b</span>
+                <span class="n">grad_a</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span> <span class="o">*</span> <span class="n">b_data</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">a_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Gradient is grad_output * a</span>
+                <span class="n">grad_b</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span> <span class="o">*</span> <span class="n">a_data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">b_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_b</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="s2">&quot;mul&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mul operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> * </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="div">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.div">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">div</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">TensorLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise division with broadcasting and gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: Numerator</span>
+<span class="sd">        b: Denominator</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Result tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = a / b</span>
+<span class="sd">        ∂output/∂a = 1/b (broadcasted to a.shape)</span>
+<span class="sd">        ∂output/∂b = -a/b² (broadcasted to b.shape)</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If denominator contains zeros</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert inputs to tensors</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># Check for division by zero</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Division by zero detected&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Broadcast tensors to compatible shapes</span>
+    <span class="n">a_data</span><span class="p">,</span> <span class="n">b_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">a_data</span> <span class="o">/</span> <span class="n">b_data</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;div(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for division.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Gradient is grad_output / b</span>
+                <span class="n">grad_a</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_output</span> <span class="o">/</span> <span class="n">b_data</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">a_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># Gradient is -grad_output * a / b²</span>
+                <span class="n">grad_b</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="o">-</span><span class="n">grad_output</span> <span class="o">*</span> <span class="n">a_data</span> <span class="o">/</span> <span class="p">(</span><span class="n">b_data</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">b_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_b</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="s2">&quot;div&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Div operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="neg">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.neg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neg</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise negation with gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: Input tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Negated tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = -a</span>
+<span class="sd">        ∂output/∂a = -1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">data</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;neg(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for negation.&quot;&quot;&quot;</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="o">-</span><span class="n">grad_output</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="s2">&quot;neg&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Neg operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="matmul">
+<a class="viewcode-back" href="../../../api/functional.html#neural_arch.functional.matmul">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix multiplication with gradient support.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        a: Left matrix tensor</span>
+<span class="sd">        b: Right matrix tensor</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Matrix multiplication result</span>
+<span class="sd">        </span>
+<span class="sd">    Mathematical Definition:</span>
+<span class="sd">        output = a @ b</span>
+<span class="sd">        ∂output/∂a = grad_output @ b.T</span>
+<span class="sd">        ∂output/∂b = a.T @ grad_output</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If matrix dimensions are incompatible</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate matrix dimensions</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;matmul requires 2D+ tensors, got shapes </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Incompatible matrix dimensions: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Perform matrix multiplication</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    
+    <span class="c1"># Create result tensor</span>
+    <span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;matmul(</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;tensor&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Set up gradient computation</span>
+    <span class="k">if</span> <span class="n">requires_grad</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">backward_fn</span><span class="p">(</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Backward pass for matrix multiplication.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># grad_a = grad_output @ b.T</span>
+                <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">grad_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">grad_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                
+                <span class="c1"># Reduce gradient if needed (e.g., batched operations on parameters)</span>
+                <span class="k">if</span> <span class="n">grad_a</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="n">grad_a</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_a</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">grad_a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                
+                <span class="n">a</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="c1"># grad_b = a.T @ grad_output</span>
+                <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">grad_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">grad_output</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">grad_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">grad_output</span><span class="p">)</span>
+                
+                <span class="c1"># Reduce gradient if needed (e.g., batched operations on parameters)</span>
+                <span class="k">if</span> <span class="n">grad_b</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="n">grad_b</span> <span class="o">=</span> <span class="n">reduce_gradient</span><span class="p">(</span><span class="n">grad_b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">grad_b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                
+                <span class="n">b</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">grad_b</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">&#39;_backward&#39;</span><span class="p">):</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span>
+        
+        <span class="n">result</span><span class="o">.</span><span class="n">_grad_fn</span> <span class="o">=</span> <span class="n">GradientFunction</span><span class="p">(</span><span class="n">backward_fn</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="s2">&quot;matmul&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matmul operation: </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Neural Architecture Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

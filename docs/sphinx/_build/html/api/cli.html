@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command Line Interface &mdash; Neural Architecture 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Configuration Module" href="config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Neural Architecture
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="functional.html">Functional Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">Neural Network Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optim.html">Optimization Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Command Line Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cli-functions">CLI Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neural_arch.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#train-command">Train Command</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evaluate-command">Evaluate Command</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-command">Config Command</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmark-command">Benchmark Command</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#complete-training-pipeline">Complete Training Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#programmatic-cli-usage">Programmatic CLI Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file-generation">Configuration File Generation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training-with-different-options">Training with Different Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#model-evaluation">Model Evaluation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-benchmarking">Performance Benchmarking</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#cli-configuration">CLI Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging-and-output">Logging and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-examples">Integration Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cli-architecture">CLI Architecture</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../py-modindex.html">Module Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../search.html">Search Page</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Neural Architecture</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Command Line Interface</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/cli.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="command-line-interface">
+<h1>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h1>
+<p>The CLI module provides command-line tools for training, evaluation, and configuration management.</p>
+<section id="cli-functions">
+<h2>CLI Functions<a class="headerlink" href="#cli-functions" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="neural_arch.cli.main">
+<span class="sig-prename descclassname"><span class="pre">neural_arch.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neural_arch/cli/main.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_arch.cli.main" title="Link to this definition"></a></dt>
+<dd><p>Main CLI entry point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span>) – Command line arguments (uses sys.argv if None)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Exit code (0 for success, non-zero for error)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="commands">
+<h2>Commands<a class="headerlink" href="#commands" title="Link to this heading"></a></h2>
+<section id="train-command">
+<h3>Train Command<a class="headerlink" href="#train-command" title="Link to this heading"></a></h3>
+<p>Train a neural network model:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train with configuration file</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--config<span class="w"> </span>config.yaml<span class="w"> </span>--output<span class="w"> </span>models/my_model
+
+<span class="c1"># Train with command line parameters</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--model-type<span class="w"> </span>transformer<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span>--epochs<span class="w"> </span><span class="m">100</span>
+</pre></div>
+</div>
+</section>
+<section id="evaluate-command">
+<h3>Evaluate Command<a class="headerlink" href="#evaluate-command" title="Link to this heading"></a></h3>
+<p>Evaluate a trained model:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate model</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>models/my_model<span class="w"> </span>--data<span class="w"> </span>test_data.txt
+
+<span class="c1"># Evaluate with custom metrics</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>models/my_model<span class="w"> </span>--data<span class="w"> </span>test_data.txt<span class="w"> </span>--metrics<span class="w"> </span>accuracy,f1
+</pre></div>
+</div>
+</section>
+<section id="config-command">
+<h3>Config Command<a class="headerlink" href="#config-command" title="Link to this heading"></a></h3>
+<p>Manage configurations:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate default configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--output<span class="w"> </span>config.yaml
+
+<span class="c1"># Validate configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--validate<span class="w"> </span>config.yaml
+
+<span class="c1"># List available presets</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--list-presets
+</pre></div>
+</div>
+</section>
+<section id="benchmark-command">
+<h3>Benchmark Command<a class="headerlink" href="#benchmark-command" title="Link to this heading"></a></h3>
+<p>Run performance benchmarks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Benchmark tensor operations</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--operations<span class="w"> </span>tensor
+
+<span class="c1"># Benchmark training performance</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--training<span class="w"> </span>--model<span class="w"> </span>transformer<span class="w"> </span>--batch-size<span class="w"> </span><span class="m">32</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="complete-training-pipeline">
+<h3>Complete Training Pipeline<a class="headerlink" href="#complete-training-pipeline" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Generate configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--preset<span class="w"> </span>transformer_base<span class="w"> </span>--output<span class="w"> </span>my_config.yaml
+
+<span class="c1"># 2. Edit configuration as needed</span>
+<span class="c1"># Edit my_config.yaml</span>
+
+<span class="c1"># 3. Validate configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--validate<span class="w"> </span>my_config.yaml
+
+<span class="c1"># 4. Train model</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--config<span class="w"> </span>my_config.yaml<span class="w"> </span>--output<span class="w"> </span>models/transformer_model
+
+<span class="c1"># 5. Evaluate model</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>models/transformer_model<span class="w"> </span>--data<span class="w"> </span>test.txt
+</pre></div>
+</div>
+</section>
+<section id="programmatic-cli-usage">
+<h3>Programmatic CLI Usage<a class="headerlink" href="#programmatic-cli-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">neural_arch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">na</span>
+
+<span class="c1"># Run CLI commands programmatically</span>
+<span class="n">exit_code</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">run_cli</span><span class="p">(</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;config.yaml&#39;</span><span class="p">)</span>
+
+<span class="c1"># Handle different commands</span>
+<span class="n">commands</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;--generate&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="s1">&#39;config.yaml&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;config.yaml&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;eval&#39;</span><span class="p">,</span> <span class="s1">&#39;--model&#39;</span><span class="p">,</span> <span class="s1">&#39;model.pth&#39;</span><span class="p">,</span> <span class="s1">&#39;--data&#39;</span><span class="p">,</span> <span class="s1">&#39;test.txt&#39;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">run_cli</span><span class="p">(</span><span class="o">*</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command failed: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="configuration-file-generation">
+<h3>Configuration File Generation<a class="headerlink" href="#configuration-file-generation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate different types of configurations</span>
+
+<span class="c1"># Transformer configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--preset<span class="w"> </span>transformer_base<span class="w"> </span>--output<span class="w"> </span>transformer.yaml
+
+<span class="c1"># MLP configuration</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--preset<span class="w"> </span>mlp_basic<span class="w"> </span>--output<span class="w"> </span>mlp.yaml
+
+<span class="c1"># Custom configuration with overrides</span>
+neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--preset<span class="w"> </span>transformer_base<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>model.d_model<span class="o">=</span><span class="m">768</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>training.learning_rate<span class="o">=</span><span class="m">0</span>.0005<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>custom.yaml
+</pre></div>
+</div>
+</section>
+<section id="training-with-different-options">
+<h3>Training with Different Options<a class="headerlink" href="#training-with-different-options" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic training</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--data<span class="w"> </span>train.txt<span class="w"> </span>--output<span class="w"> </span>model.pth
+
+<span class="c1"># Training with validation</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--data<span class="w"> </span>train.txt<span class="w"> </span>--val-data<span class="w"> </span>val.txt<span class="w"> </span>--output<span class="w"> </span>model.pth
+
+<span class="c1"># Training with specific architecture</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--model-type<span class="w"> </span>transformer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--d-model<span class="w"> </span><span class="m">512</span><span class="w"> </span>--num-heads<span class="w"> </span><span class="m">8</span><span class="w"> </span>--num-layers<span class="w"> </span><span class="m">6</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--data<span class="w"> </span>train.txt<span class="w"> </span>--output<span class="w"> </span>transformer_model.pth
+
+<span class="c1"># Training with custom optimizer settings</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--data<span class="w"> </span>train.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--optimizer<span class="w"> </span>adam<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span>--weight-decay<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch-size<span class="w"> </span><span class="m">64</span><span class="w"> </span>--epochs<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>optimized_model.pth
+</pre></div>
+</div>
+</section>
+<section id="model-evaluation">
+<h3>Model Evaluation<a class="headerlink" href="#model-evaluation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic evaluation</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>model.pth<span class="w"> </span>--data<span class="w"> </span>test.txt
+
+<span class="c1"># Evaluation with detailed metrics</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>model.pth<span class="w"> </span>--data<span class="w"> </span>test.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--metrics<span class="w"> </span>accuracy,precision,recall,f1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>results.json
+
+<span class="c1"># Batch evaluation on multiple test sets</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span>model.pth<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--data<span class="w"> </span>test1.txt,test2.txt,test3.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>eval_results/
+</pre></div>
+</div>
+</section>
+<section id="performance-benchmarking">
+<h3>Performance Benchmarking<a class="headerlink" href="#performance-benchmarking" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Benchmark core operations</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--operations<span class="w"> </span>tensor,matrix,activation
+
+<span class="c1"># Benchmark training performance</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--training<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--model<span class="w"> </span>transformer<span class="w"> </span>--batch-sizes<span class="w"> </span><span class="m">16</span>,32,64,128<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--sequence-lengths<span class="w"> </span><span class="m">128</span>,256,512
+
+<span class="c1"># Memory usage benchmarks</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--memory<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--model<span class="w"> </span>transformer<span class="w"> </span>--max-batch-size<span class="w"> </span><span class="m">128</span>
+
+<span class="c1"># Save benchmark results</span>
+neural-arch<span class="w"> </span>benchmark<span class="w"> </span>--all<span class="w"> </span>--output<span class="w"> </span>benchmarks.json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cli-configuration">
+<h2>CLI Configuration<a class="headerlink" href="#cli-configuration" title="Link to this heading"></a></h2>
+<p>The CLI can be configured through:</p>
+<dl class="simple">
+<dt><strong>Configuration Files</strong>:</dt><dd><ul class="simple">
+<li><p>Global config: <code class="docutils literal notranslate"><span class="pre">~/.neural_arch/config.yaml</span></code></p></li>
+<li><p>Project config: <code class="docutils literal notranslate"><span class="pre">./neural_arch.yaml</span></code></p></li>
+<li><p>Explicit config: <code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">path/to/config.yaml</span></code></p></li>
+</ul>
+</dd>
+<dt><strong>Environment Variables</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">NEURAL_ARCH_CONFIG</span></code>: Path to default configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NEURAL_ARCH_LOG_LEVEL</span></code>: Logging level (DEBUG, INFO, WARNING, ERROR)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NEURAL_ARCH_DEVICE</span></code>: Default device (cpu)</p></li>
+</ul>
+</dd>
+<dt><strong>Command Line Arguments</strong>:</dt><dd><ul class="simple">
+<li><p>Override any configuration value</p></li>
+<li><p>Support for nested configuration keys</p></li>
+<li><p>Type conversion and validation</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>The CLI provides comprehensive error handling:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration validation errors</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--config<span class="w"> </span>invalid_config.yaml
+<span class="c1"># Error: Invalid configuration: model.d_model must be &gt; 0</span>
+
+<span class="c1"># File not found errors</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--data<span class="w"> </span>nonexistent.txt
+<span class="c1"># Error: Training data file not found: nonexistent.txt</span>
+
+<span class="c1"># Parameter validation errors</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--lr<span class="w"> </span>-0.1
+<span class="c1"># Error: Learning rate must be positive, got -0.1</span>
+</pre></div>
+</div>
+</section>
+<section id="logging-and-output">
+<h2>Logging and Output<a class="headerlink" href="#logging-and-output" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>Logging Levels</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--verbose</span></code>: Enable debug logging</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--quiet</span></code>: Suppress info messages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--log-file</span></code>: Write logs to file</p></li>
+</ul>
+</dd>
+<dt><strong>Progress Reporting</strong>:</dt><dd><ul class="simple">
+<li><p>Training progress bars</p></li>
+<li><p>Real-time loss reporting</p></li>
+<li><p>ETA calculations</p></li>
+</ul>
+</dd>
+<dt><strong>Output Formats</strong>:</dt><dd><ul class="simple">
+<li><p>JSON for structured data</p></li>
+<li><p>YAML for configurations</p></li>
+<li><p>Plain text for human-readable output</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="integration-examples">
+<h2>Integration Examples<a class="headerlink" href="#integration-examples" title="Link to this heading"></a></h2>
+<p><strong>Shell Scripts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="c1"># train_model.sh</span>
+
+<span class="nv">CONFIG_FILE</span><span class="o">=</span><span class="s2">&quot;configs/experiment_1.yaml&quot;</span>
+<span class="nv">MODEL_DIR</span><span class="o">=</span><span class="s2">&quot;models/experiment_1&quot;</span>
+
+<span class="c1"># Generate configuration if it doesn&#39;t exist</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CONFIG_FILE</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span>neural-arch<span class="w"> </span>config<span class="w"> </span>--generate<span class="w"> </span>--preset<span class="w"> </span>transformer_base<span class="w"> </span>--output<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CONFIG_FILE</span><span class="s2">&quot;</span>
+<span class="k">fi</span>
+
+<span class="c1"># Train model</span>
+neural-arch<span class="w"> </span>train<span class="w"> </span>--config<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CONFIG_FILE</span><span class="s2">&quot;</span><span class="w"> </span>--output<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MODEL_DIR</span><span class="s2">&quot;</span>
+
+<span class="c1"># Evaluate model</span>
+neural-arch<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MODEL_DIR</span><span class="s2">&quot;</span><span class="w"> </span>--data<span class="w"> </span>test.txt
+</pre></div>
+</div>
+<p><strong>Python Integration</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">neural_arch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">na</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_training_pipeline</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run complete training pipeline via CLI.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Validate configuration</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">run_cli</span><span class="p">(</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;--validate&#39;</span><span class="p">,</span> <span class="n">config_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid configuration: </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Train model</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">run_cli</span><span class="p">(</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Training failed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate model</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">run_cli</span><span class="p">(</span><span class="s1">&#39;eval&#39;</span><span class="p">,</span> <span class="s1">&#39;--model&#39;</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;--data&#39;</span><span class="p">,</span> <span class="s1">&#39;test.txt&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="cli-architecture">
+<h2>CLI Architecture<a class="headerlink" href="#cli-architecture" title="Link to this heading"></a></h2>
+<p>The CLI is built with:</p>
+<ul class="simple">
+<li><p><strong>Argument Parsing</strong>: Uses argparse for robust command-line parsing</p></li>
+<li><p><strong>Configuration Management</strong>: Seamless integration with config system</p></li>
+<li><p><strong>Error Handling</strong>: Comprehensive error reporting and validation</p></li>
+<li><p><strong>Extensibility</strong>: Plugin architecture for custom commands</p></li>
+<li><p><strong>Testing</strong>: Full test coverage for all CLI functionality</p></li>
+</ul>
+<p>The CLI serves as the primary interface for production deployments and automated training pipelines.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="config.html" class="btn btn-neutral float-left" title="Configuration Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Neural Architecture Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
