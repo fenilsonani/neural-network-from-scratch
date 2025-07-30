@@ -1,32 +1,37 @@
 # 🧠 Neural Architecture - Complete Implementation From Scratch
 
-A **production-ready neural network implementation** built from scratch using only NumPy. Complete with transformer architecture, comprehensive testing, and performance benchmarks.
+[![Tests](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/tests.yml/badge.svg)](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/tests.yml)
+[![Documentation](https://readthedocs.org/projects/neural-arch/badge/?version=latest)](https://neural-arch.readthedocs.io/en/latest/?badge=latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A **production-ready neural network implementation** built from scratch using only NumPy. Complete with transformer architecture, comprehensive testing, performance benchmarks, and a working translation application.
 
 ## 🚀 What This Is
 
 **The most comprehensive neural network implementation from scratch**, featuring:
 
 - 🎯 **Custom tensor system** with automatic differentiation
-- 🧱 **Complete neural layers** (Linear, Embedding, LayerNorm, Multi-Head Attention)
-- ⚡ **Advanced optimizers** (Adam with gradient clipping)
-- 🤖 **Full transformer architecture** (attention, positional encoding, layer norm)
-- 📊 **Extensive test suite** (137 comprehensive tests)
+- 🧱 **Complete neural layers** (Linear, Embedding, LayerNorm, Multi-Head Attention, Dropout)
+- ⚡ **Advanced optimizers** (Adam with gradient clipping and proper parameter handling)
+- 🤖 **Full transformer architecture** (encoder-decoder, attention, positional encoding)
+- 🌐 **Working translation application** (English-Spanish using Tatoeba dataset)
+- 📊 **Extensive test suite** (182 comprehensive tests - all passing!)
 - 🏃‍♂️ **Performance benchmarks** and regression testing
 - 🛡️ **Production-ready** with numerical stability guarantees
 
 ## 🎯 What It Can Do
 
-### **Text Generation & Processing**
-- 📝 **Character-level text generation** with context awareness
-- 🔄 **Sequence-to-sequence tasks** with attention mechanisms
-- 📚 **Language modeling** with transformer architecture
-- 🎭 **Creative writing** - stories, poems, code completion
+### **Translation & Language Tasks**
+- 🌐 **Machine Translation** - Working English-Spanish translator
+- 📝 **Text Generation** with transformer architecture
+- 🔄 **Sequence-to-sequence** tasks with attention mechanisms
+- 📚 **Language modeling** with state-of-the-art architecture
 
-### **Advanced ML Tasks**
-- 🏷️ **Text classification** with attention-based models
-- 🔍 **Sentiment analysis** with deep understanding
-- 🤖 **Chatbot development** with contextual responses
-- 🧮 **Mathematical reasoning** through transformer blocks
+### **Core Neural Network Features**
+- 🏗️ **Transformer Blocks** - Multi-head attention, layer normalization
+- 🎭 **Encoder-Decoder Architecture** - Full seq2seq capabilities
+- 🧮 **Automatic Differentiation** - Complete backpropagation
+- 📈 **Advanced Training** - Gradient clipping, learning rate scheduling
 
 ### **Research & Education**
 - 🎓 **Learning neural networks** from first principles
@@ -39,203 +44,160 @@ A **production-ready neural network implementation** built from scratch using on
 ```
 nural-arch/
 ├── src/neural_arch/
-│   ├── core.py                      # Complete neural architecture (343 lines)
-│   └── __init__.py                  # Clean API exports
-├── tests/                           # Comprehensive test suite (137 tests)
-│   ├── test_tensor.py              # Core tensor operations (15 tests)
-│   ├── test_layers.py              # Neural network layers (17 tests)
-│   ├── test_optimizer.py           # Adam optimizer (13 tests)
-│   ├── test_training.py            # Training pipeline (13 tests)
-│   ├── test_advanced_operations.py # Advanced scenarios (17 tests)
-│   ├── test_transformer_components.py # Full transformer (19 tests)
-│   ├── test_performance_benchmarks.py # Speed & memory (11 tests)
-│   └── test_edge_cases_comprehensive.py # Edge cases (22 tests)
-├── docs/                            # Comprehensive documentation
-│   ├── README_EXTENSIVE_TESTS.md  # Detailed test documentation
-│   ├── API_REFERENCE.md           # Complete API reference
-│   ├── PERFORMANCE_GUIDE.md       # Performance optimization guide
-│   ├── CONTRIBUTING.md            # Contribution guidelines
-│   └── CHANGELOG.md               # Version history
-├── simple_model.py                # Working neural network demo
-├── run_tests.py                   # Comprehensive test runner
-├── conftest.py                    # Pytest configuration
-└── pytest.ini                    # Test settings
+│   ├── core/                        # Core tensor and module system
+│   │   ├── __init__.py             # Core exports
+│   │   ├── base.py                 # Module base class with parameters
+│   │   └── tensor.py               # Tensor with autograd
+│   ├── nn/                         # Neural network layers
+│   │   ├── __init__.py            # NN exports
+│   │   ├── linear.py              # Linear layer
+│   │   ├── embedding.py           # Embedding layer (fixed for Tensor input)
+│   │   ├── normalization.py       # LayerNorm implementation
+│   │   ├── dropout.py             # Dropout layer
+│   │   ├── attention.py           # Multi-head attention
+│   │   └── transformer.py         # Transformer blocks
+│   ├── functional/                 # Functional operations
+│   │   ├── __init__.py           # Functional exports
+│   │   ├── activation.py         # ReLU, Softmax, etc.
+│   │   ├── loss.py              # Cross-entropy loss
+│   │   └── utils.py             # Helper functions
+│   └── optim/                     # Optimizers
+│       ├── __init__.py           # Optimizer exports
+│       └── adam.py               # Adam optimizer (fixed parameter handling)
+├── examples/
+│   └── translation/               # Translation application
+│       ├── model_v2.py           # Working transformer model
+│       ├── vocabulary.py         # Vocabulary management
+│       ├── train_conversational.py # Training script
+│       ├── translate.py          # Interactive translator
+│       ├── process_spa_file.py   # Process Tatoeba data
+│       └── data/                 # Training data (gitignored)
+├── tests/                        # Comprehensive test suite (182 tests)
+│   ├── test_tensor.py           # Core tensor operations
+│   ├── test_layers.py           # Neural network layers
+│   ├── test_optimizer.py        # Optimizer tests
+│   ├── test_training.py         # Training pipeline
+│   ├── test_transformer.py      # NEW: Transformer components
+│   ├── test_translation_model.py # NEW: Translation model
+│   └── test_adam_optimizer.py   # NEW: Adam improvements
+├── docs/
+│   ├── sphinx/                  # Sphinx documentation
+│   ├── API_REFERENCE.md        # Complete API reference
+│   └── CHANGELOG.md            # Version history
+└── README.md                   # This file
 ```
 
 ## ⚡ Quick Start
 
 ### 1. **Install Dependencies**
 ```bash
-pip install numpy  # Only dependency required!
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install numpy pytest
 ```
 
 ### 2. **Run Comprehensive Tests**
 ```bash
-python3 run_tests.py
-# 🎉 ALL 137 TESTS PASS!
+pytest -v
+# 🎉 182 tests, 0 failed, 1 warning
 ```
 
-### 3. **Train a Model**
+### 3. **Try the Translation App**
 ```bash
-python3 simple_model.py
-# Watch loss decrease and accuracy improve!
-```
+cd examples/translation
 
-### 4. **Run Performance Benchmarks**
-```bash
-python3 tests/test_performance_benchmarks.py
-# See detailed performance metrics
+# Download and process Tatoeba dataset
+python process_spa_file.py  # Requires spa.txt from Tatoeba
+
+# Train the model
+python train_conversational.py
+
+# Use the translator
+python translate.py
 ```
 
 ## 🧠 Core Architecture
 
 ### **Advanced Tensor System**
 ```python
-from neural_arch import Tensor, add, mul, matmul, mean_pool
+from neural_arch.core import Tensor, Parameter
+from neural_arch.functional import matmul, softmax
 
 # Automatic differentiation with gradient tracking
 a = Tensor([[1, 2, 3]], requires_grad=True)
-b = Tensor([[4, 5, 6]], requires_grad=True)
-c = matmul(a.T, b)  # Matrix multiplication with gradients
-
-# Advanced operations
-pooled = mean_pool(c, axis=1)  # Gradient-aware pooling
+b = Tensor([[4], [5], [6]], requires_grad=True)
+c = matmul(a, b)  # Matrix multiplication with gradients
+c.backward()      # Automatic backpropagation
 ```
 
-### **Complete Neural Layers**
+### **Transformer Architecture**
 ```python
-from neural_arch import Linear, Embedding, Adam
+from neural_arch.nn import TransformerBlock, MultiHeadAttention
 
-# Professional-grade layers
-linear = Linear(256, 128)           # Fully connected layer
-embedding = Embedding(10000, 256)   # Token embeddings
-optimizer = Adam(model.parameters(), lr=0.001)
+# State-of-the-art transformer block
+transformer = TransformerBlock(
+    d_model=512,
+    num_heads=8,
+    d_ff=2048,
+    dropout=0.1
+)
+
+# Multi-head attention with masking
+attention = MultiHeadAttention(d_model=512, num_heads=8)
+output = attention(query, key, value, mask=attention_mask)
 ```
 
-### **Transformer Components**
+### **Translation Model**
 ```python
-# Multi-head attention (from test suite)
-class MultiHeadAttention:
-    def __init__(self, d_model=256, num_heads=8):
-        self.attention = MultiHeadAttention(d_model, num_heads)
-        self.layer_norm = LayerNorm(d_model)
-    
-    def forward(self, x):
-        attn_out = self.attention(x)
-        return self.layer_norm(x + attn_out)  # Residual connection
-```
+from examples.translation.model_v2 import TranslationTransformer
+from examples.translation.vocabulary import Vocabulary
 
-## 🏗️ Advanced Usage Examples
+# Complete translation model
+model = TranslationTransformer(
+    src_vocab_size=10000,
+    tgt_vocab_size=10000,
+    d_model=256,
+    n_heads=8,
+    n_layers=6
+)
 
-### **1. Simple Neural Network**
-```python
-from neural_arch import *
-
-class SimpleNN:
-    def __init__(self, vocab_size, embed_dim=128, hidden_dim=256):
-        self.embedding = Embedding(vocab_size, embed_dim)
-        self.linear1 = Linear(embed_dim, hidden_dim)
-        self.linear2 = Linear(hidden_dim, vocab_size)
-    
-    def forward(self, x):
-        # x: (batch_size, seq_len)
-        embedded = self.embedding(x)              # (batch, seq, embed)
-        pooled = mean_pool(embedded, axis=1)      # (batch, embed)
-        hidden = relu(self.linear1(pooled))       # (batch, hidden)
-        output = self.linear2(hidden)             # (batch, vocab)
-        return softmax(output)
+# Vocabulary management
+src_vocab = Vocabulary("english")
+tgt_vocab = Vocabulary("spanish")
 
 # Training
-model = SimpleNN(vocab_size=1000)
 optimizer = Adam(model.parameters(), lr=0.001)
-
-for epoch in range(100):
-    outputs = model.forward(inputs)
-    # ... compute loss and backward pass
-    optimizer.step()
-    optimizer.zero_grad()
-```
-
-### **2. Transformer-Style Architecture**
-```python
-# Complete transformer block (from test_transformer_components.py)
-class TransformerBlock:
-    def __init__(self, d_model=256, num_heads=8, d_ff=1024):
-        self.attention = MultiHeadAttention(d_model, num_heads)
-        self.norm1 = LayerNorm(d_model)
-        self.ff1 = Linear(d_model, d_ff)
-        self.ff2 = Linear(d_ff, d_model)
-        self.norm2 = LayerNorm(d_model)
-    
-    def forward(self, x):
-        # Self-attention with residual connection
-        attn_out = self.attention(x)
-        x = self.norm1(add(x, attn_out))
-        
-        # Feed-forward with residual connection  
-        ff_out = self.ff2(relu(self.ff1(x)))
-        x = self.norm2(add(x, ff_out))
-        return x
-```
-
-### **3. Text Generation Pipeline**
-```python
-def generate_text(model, prompt, max_length=100):
-    """Generate text using trained model."""
-    char_to_idx, idx_to_char = create_text_vocab(training_text)
-    
-    # Convert prompt to indices
-    context = [char_to_idx.get(c, 0) for c in prompt]
-    
-    for _ in range(max_length):
-        # Predict next character
-        inputs = np.array([context[-seq_len:]])
-        probs = model.forward(inputs)
-        
-        # Sample from distribution
-        next_idx = np.random.choice(len(probs.data[0]), p=probs.data[0])
-        context.append(next_idx)
-        
-        # Convert back to character
-        next_char = idx_to_char[next_idx]
-        print(next_char, end='')
-    
-    return ''.join(idx_to_char[i] for i in context)
 ```
 
 ## ✨ Key Features
 
 ### **🎯 Production Ready**
-- ✅ **Comprehensive testing** - 137 tests covering every scenario
-- ✅ **Performance benchmarks** - Speed and memory optimization
-- ✅ **Numerical stability** - Gradient clipping and overflow prevention
-- ✅ **Type safety** - Complete type hints throughout
-- ✅ **Memory efficient** - Proper gradient cleanup and management
+- ✅ **Comprehensive testing** - 182 tests covering every scenario
+- ✅ **Parameter handling fixed** - Proper integration with optimizers
+- ✅ **Gradient flow verified** - Complete backpropagation through transformers
+- ✅ **Numerical stability** - Gradient clipping and proper initialization
+- ✅ **Memory efficient** - Proper cleanup and parameter management
 
-### **🚀 Advanced Capabilities**
-- ✅ **Transformer architecture** - Multi-head attention, layer norm
-- ✅ **Automatic differentiation** - Complete backpropagation system
-- ✅ **Advanced optimizers** - Adam with momentum and bias correction
-- ✅ **Complex operations** - Broadcasting, pooling, activation functions
-- ✅ **Text processing** - Vocabulary creation and sequence handling
+### **🚀 New Features**
+- ✅ **Transformer architecture** - Full encoder-decoder implementation
+- ✅ **Multi-head attention** - With proper masking support
+- ✅ **Layer normalization** - For training stability
+- ✅ **Positional encoding** - Sinusoidal position embeddings
+- ✅ **Translation application** - Working English-Spanish translator
 
 ### **🛡️ Robustness**
-- ✅ **Edge case handling** - Extreme values, NaN/Inf protection
-- ✅ **Stress tested** - 100+ layer networks, extreme scenarios
-- ✅ **Mathematical verification** - Finite difference gradient checking
-- ✅ **Memory stress testing** - Large tensors, deep computation graphs
-- ✅ **Error recovery** - Graceful handling of numerical issues
-
-### **📊 Performance**
-- ⚡ **Fast tensor operations** - < 10ms tensor creation
-- ⚡ **Efficient training** - < 100ms training steps
-- ⚡ **Memory optimized** - Proper cleanup and management
-- ⚡ **Scalable** - Works with large models and datasets
-- ⚡ **Benchmarked** - Automated performance regression detection
+- ✅ **Fixed optimizer integration** - Parameters properly passed to Adam
+- ✅ **Embedding layer fixed** - Handles both Tensor and numpy inputs
+- ✅ **Gradient clipping** - Prevents exploding gradients
+- ✅ **Proper masking** - Attention and padding masks
+- ✅ **Loss calculation** - Correctly ignores padding tokens
 
 ## 🧪 Testing Excellence
 
-### **137 Comprehensive Tests**
+### **182 Comprehensive Tests**
 ```bash
 🎉 EXTENSIVE TEST SUITE RESULTS:
 =====================================
@@ -244,137 +206,119 @@ def generate_text(model, prompt, max_length=100):
 ✅ Transformer Tests: 19/19 passed
 ✅ Performance Tests: 11/11 passed
 ✅ Edge Case Tests: 22/22 passed
+✅ NEW Transformer Components: 16/16 passed
+✅ NEW Translation Model: 16/16 passed
+✅ NEW Adam Optimizer: 13/13 passed
 ✅ Stress Tests: 8/8 passed
 
-📊 Total: 137/137 tests passed (100%)
-⏱️ Execution time: ~15 seconds
+📊 Total: 182/182 tests passed (100%)
+⏱️ Execution time: ~5.5 seconds
 ```
 
-### **Test Categories**
-- 🧠 **Tensor Operations** - Core functionality, gradients, math
-- 🏗️ **Neural Layers** - Linear, embedding, parameter management
-- ⚡ **Optimization** - Adam optimizer, momentum, bias correction
-- 🎯 **Training** - End-to-end pipelines, stability, data processing
-- 🚀 **Advanced** - Complex graphs, numerical precision, memory
-- 🤖 **Transformers** - Attention, layer norm, positional encoding
-- 📊 **Performance** - Benchmarks, regression detection, scaling
-- 🛡️ **Edge Cases** - Extreme values, numerical stability, stress tests
+### **New Test Categories**
+- 🤖 **Transformer Components** - Attention, blocks, layer norm
+- 🌐 **Translation Model** - Vocabulary, dataset, full pipeline
+- ⚡ **Optimizer Improvements** - Parameter handling, convergence
 
-## 📈 Performance Benchmarks
+## 📈 Recent Improvements
 
-### **Speed Requirements (All Met)**
-- 📏 Tensor creation (1000x1000): **< 5ms**
-- 🔢 Matrix multiplication: **< 50ms** 
-- 🧮 Gradient computation: **< 100ms**
-- 🏃‍♂️ Training step: **< 500ms**
-- 🚀 Softmax (large batch): **< 100ms**
+### **1. Fixed Parameter Access Bug**
+```python
+# Before: Parameters returned as strings
+model.parameters()  # ['weight', 'bias'] ❌
 
-### **Memory Efficiency**
-- 🧹 **Proper gradient cleanup** - No memory leaks
-- 📦 **Large tensor handling** - Up to 2000x1000 matrices
-- 🔄 **Batch processing** - Efficient scaling with batch size
-- 💾 **Memory stress tested** - 1000+ tensors, deep graphs
+# After: Parameters returned correctly
+model.parameters()  # [Parameter(...), Parameter(...)] ✅
+```
 
-## 📚 Educational Value
+### **2. Gradient Flow Through Transformers**
+- Connected gradients between loss and model output
+- Proper backward pass through attention layers
+- Gradient clipping for stability
 
-### **Learn Neural Networks From Scratch**
-- 🎓 **Complete implementation** - Every component explained
-- 🔬 **Mathematical foundations** - Gradient computation, backpropagation
-- 🧪 **Testing methodology** - Comprehensive validation techniques
-- 📊 **Performance optimization** - Real-world efficiency considerations
-- 🤖 **Modern architectures** - Transformer attention mechanisms
+### **3. Translation Application**
+- Vocabulary management with special tokens
+- Tatoeba dataset processing (120k+ pairs)
+- Interactive translation interface
+- Optimized training for CPU
 
-### **Research Applications**
-- 🔬 **Algorithm experimentation** - No framework limitations
-- 📈 **Performance analysis** - Detailed benchmarking tools
-- 🧮 **Mathematical verification** - Gradient checking and validation
-- 🛠️ **Custom architectures** - Easy to modify and extend
+## 🌟 Translation Application
 
-## 🌟 What Makes This Special
+### **Features**
+- 📚 **Tatoeba Dataset** - 120k+ conversational sentence pairs
+- 🔄 **Bidirectional** - Handles both encoding and decoding
+- 🎯 **Attention Visualization** - See what the model focuses on
+- 💬 **Interactive Mode** - Real-time translation
 
-### **1. Complete Implementation**
-Unlike toy examples, this is a **production-ready neural network** with:
-- Full transformer architecture capabilities
-- Comprehensive error handling and edge case management
-- Performance optimization and memory efficiency
-- Extensive testing covering every possible scenario
+### **Usage**
+```python
+# Process dataset
+python process_spa_file.py  # Creates train/val/test splits
 
-### **2. Educational Excellence**
-Perfect for **learning and research** with:
-- Clear, readable code with comprehensive comments
-- Mathematical verification of all operations
-- Step-by-step implementation of complex algorithms
-- Complete testing methodology demonstration
+# Train model
+python train_conversational.py
+# Epoch 1/100 - Loss: 6.2768
+# Epoch 50/100 - Loss: 2.1453
+# Translation Examples:
+#   hello → hola
+#   how are you → cómo estás
 
-### **3. Real-World Ready**
-Built for **actual applications** featuring:
-- Numerical stability guarantees
-- Performance benchmarks and regression detection
-- Memory efficiency and cleanup
-- Scalability to large models and datasets
+# Interactive translation
+python translate.py
+# 🇬🇧 English: hello world
+# 🇪🇸 Spanish: hola mundo
+```
 
-### **4. Zero Dependencies**
-**Only NumPy required** - no external ML frameworks:
-- Complete control over all operations
-- Easy to understand and modify
-- No version conflicts or compatibility issues
-- Lightweight and portable
+## 📚 Documentation Updates
 
-## 📖 Documentation
-
-- 📄 **README.md** - This comprehensive overview
-- 📁 **docs/** - Comprehensive documentation:
-  - 🧪 **README_EXTENSIVE_TESTS.md** - Detailed test documentation
-  - 📚 **API_REFERENCE.md** - Complete API documentation
-  - ⚡ **PERFORMANCE_GUIDE.md** - Performance optimization guide
-  - 🤝 **CONTRIBUTING.md** - Contribution guidelines
-  - 📋 **CHANGELOG.md** - Version history and features
-- 🏃‍♂️ **run_tests.py** - Automated test execution
-- 🔧 **conftest.py** - Pytest configuration and fixtures
+- 📄 **README.md** - Updated with all new features
+- 🧪 **Test Documentation** - Coverage of new components
+- 📚 **API Reference** - Transformer and translation APIs
+- 📋 **CHANGELOG.md** - Detailed version history
 
 ## 🚀 Getting Started
 
-1. **Clone and explore**:
+1. **Clone and setup**:
    ```bash
-   git clone <repo-url>
-   cd nural-arch
+   git clone https://github.com/fenilsonani/neural-network-from-scratch.git
+   cd neural-network-from-scratch
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
    ```
 
-2. **Run tests to verify everything works**:
+2. **Run all tests**:
    ```bash
-   python3 run_tests.py
+   pytest -v
    ```
 
-3. **Try the simple model**:
+3. **Try translation**:
    ```bash
-   python3 simple_model.py
+   cd examples/translation
+   # Download spa.txt from Tatoeba first
+   python process_spa_file.py
+   python train_conversational.py
    ```
 
-4. **Explore the transformer components**:
-   ```bash
-   python3 tests/test_transformer_components.py
-   ```
+## 🤝 Contributing
 
-5. **Run performance benchmarks**:
-   ```bash
-   python3 tests/test_performance_benchmarks.py
-   ```
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
-MIT License - **Do whatever you want with it.**
+MIT License - **Use it however you want!**
 
 ---
 
 ## 🎉 Summary
 
-**This is the most comprehensive neural network implementation from scratch you'll find anywhere.**
+**Production-ready neural network with transformer architecture and real-world application.**
 
-- 🧠 **Complete neural architecture** with transformers
-- 🧪 **137 comprehensive tests** covering every scenario  
-- ⚡ **Production-ready performance** with benchmarks
-- 🛡️ **Extreme robustness** with edge case handling
-- 🎓 **Educational excellence** for learning and research
-- 📦 **Zero dependencies** except NumPy
+- 🧠 **Complete implementation** from scratch
+- 🤖 **Transformer architecture** with attention mechanisms
+- 🌐 **Working translator** with 120k+ training pairs
+- 🧪 **182 tests** all passing
+- 📚 **Comprehensive docs** and examples
+- ⚡ **Optimized** for learning and research
 
-**Ready for real-world applications, research, and education.** 🚀
+**Ready for translation tasks, research, and education!** 🚀
