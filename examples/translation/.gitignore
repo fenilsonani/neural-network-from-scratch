@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+
+# Data files
+data/
+spa.txt
+es.txt
+*.csv
+*.tsv
+*.tsv.gz
+*.tar.gz
+*.zip
+
+# Vocabulary files (generated during training)
+vocab_*.json
+
+# Model config files
+model_config*.json
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+.DS_Store
