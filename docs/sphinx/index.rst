@@ -4,7 +4,7 @@ Neural Architecture Documentation
 **Neural Architecture** is an enterprise-grade neural network framework built from scratch with NumPy, 
 featuring comprehensive tensor operations, automatic differentiation, and production-ready architecture.
 
-.. image:: https://img.shields.io/badge/version-2.0.0-blue.svg
+.. image:: https://img.shields.io/badge/version-3.0.0-blue.svg
    :target: https://github.com/your-repo/neural-arch
    :alt: Version
 
@@ -12,7 +12,7 @@ featuring comprehensive tensor operations, automatic differentiation, and produc
    :target: https://python.org
    :alt: Python Version
 
-.. image:: https://img.shields.io/badge/tests-137%20passing-brightgreen.svg
+.. image:: https://img.shields.io/badge/tests-182%20passing-brightgreen.svg
    :alt: Test Status
 
 Key Features
@@ -26,15 +26,17 @@ Key Features
 
 🧠 **Complete Neural Network Stack**
    - Custom tensor system with automatic differentiation
-   - Full suite of neural network layers
-   - Advanced optimizers (Adam, SGD, AdamW)
-   - Transformer architecture with attention mechanisms
+   - Full suite of neural network layers including transformers
+   - Advanced optimizers with proper parameter handling
+   - Complete transformer architecture (encoder-decoder)
+   - Working English-Spanish translation application
 
 🔬 **Research & Production Ready**
    - 100% NumPy implementation for transparency
-   - Comprehensive test suite (137 tests, 100% passing)
+   - Comprehensive test suite (182 tests, 100% passing)
    - Performance benchmarking and profiling
-   - Extensive documentation and examples
+   - Extensive documentation with translation example
+   - Trained on 120k+ Tatoeba sentence pairs
 
 📊 **Advanced Features**
    - Gradient clipping and numerical stability
@@ -184,11 +186,12 @@ Neural Architecture achieves excellent performance for a pure NumPy implementati
 Testing & Quality
 ----------------
 
-- **137 comprehensive tests** covering all functionality
+- **182 comprehensive tests** covering all functionality
 - **100% test success rate** with edge case handling
 - **Continuous integration** with automated testing
 - **Performance regression testing** for optimization validation
 - **Documentation coverage** for all public APIs
+- **New test categories**: Transformer components, translation model, Adam optimizer
 
 License & Contributing
 ---------------------

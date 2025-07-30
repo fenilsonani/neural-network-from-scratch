@@ -613,9 +613,330 @@ optimizer.zero_grad()
 ### **Import Everything**
 ```python
 from neural_arch import (
-    Tensor, Linear, Embedding, Adam,
+    # Core components
+    Tensor, Parameter,
+    
+    # Neural network layers
+    Linear, Embedding, LayerNorm,
+    MultiHeadAttention, TransformerBlock, TransformerDecoderBlock,
+    
+    # Optimizers
+    Adam,
+    
+    # Operations
     add, mul, matmul, relu, softmax, mean_pool,
+    
+    # Utilities
     create_text_vocab, text_to_sequences, propagate_gradients
+)
+
+# Translation components (from examples)
+from examples.translation.vocabulary import Vocabulary
+from examples.translation.model_v2 import TranslationTransformer, PositionalEncoding
+```
+
+---
+
+## 🤖 **Transformer Components**
+
+### **Multi-Head Attention**
+
+The core attention mechanism for transformer architectures.
+
+```python
+class MultiHeadAttention:
+    """Multi-head scaled dot-product attention."""
+    
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0):
+        """Initialize multi-head attention.
+        
+        Args:
+            d_model: Model dimension (must be divisible by num_heads)
+            num_heads: Number of attention heads
+            dropout: Dropout probability
+        """
+```
+
+#### **Mathematical Definition**
+Multi-head attention computes:
+1. `Q = X @ W_Q`, `K = X @ W_K`, `V = X @ W_V`
+2. Split Q, K, V into `num_heads` pieces
+3. For each head: `Attention(Q, K, V) = softmax(QK^T / √d_k) @ V`
+4. Concatenate heads and project: `output = Concat(head_1, ..., head_h) @ W_O`
+
+#### **Forward Method**
+```python
+def forward(self, x: Tensor, mask: Optional[np.ndarray] = None) -> Tensor:
+    """Apply multi-head attention.
+    
+    Args:
+        x: Input tensor of shape (batch_size, seq_len, d_model)
+        mask: Optional attention mask (1 = mask, 0 = keep)
+        
+    Returns:
+        Output tensor of shape (batch_size, seq_len, d_model)
+    """
+```
+
+**Example:**
+```python
+# Create multi-head attention
+attn = MultiHeadAttention(d_model=512, num_heads=8)
+
+# Input sequence
+x = Tensor(np.random.randn(2, 10, 512))
+
+# Apply attention
+output = attn(x)  # Shape: (2, 10, 512)
+
+# With masking (e.g., padding mask)
+mask = np.array([[0, 0, 0, 0, 1, 1, 1, 1, 1, 1]])  # Mask positions 4-9
+output = attn(x, mask=mask)
+```
+
+### **Layer Normalization**
+
+Normalization across features for stable training.
+
+```python
+class LayerNorm:
+    """Layer normalization with learnable parameters."""
+    
+    def __init__(self, normalized_shape: int, eps: float = 1e-5):
+        """Initialize layer normalization.
+        
+        Args:
+            normalized_shape: Size of the feature dimension
+            eps: Small constant for numerical stability
+        """
+```
+
+**Example:**
+```python
+# Create layer normalization
+norm = LayerNorm(512)
+
+# Normalize features
+x = Tensor(np.random.randn(2, 10, 512) * 5 + 2)  # High variance input
+normalized = norm(x)
+# Output has mean ≈ 0, std ≈ 1 along feature dimension
+```
+
+### **Transformer Block**
+
+Complete transformer encoder block with attention and feed-forward.
+
+```python
+class TransformerBlock:
+    """Transformer encoder block."""
+    
+    def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.0):
+        """Initialize transformer block.
+        
+        Args:
+            d_model: Model dimension
+            num_heads: Number of attention heads
+            d_ff: Feed-forward hidden dimension
+            dropout: Dropout probability
+        """
+```
+
+**Architecture:**
+1. Multi-head self-attention with residual connection
+2. Layer normalization
+3. Position-wise feed-forward network with residual connection
+4. Layer normalization
+
+**Example:**
+```python
+# Create transformer block
+block = TransformerBlock(d_model=512, num_heads=8, d_ff=2048)
+
+# Process sequence
+x = Tensor(np.random.randn(2, 10, 512))
+output = block(x)  # Shape: (2, 10, 512)
+
+# Stack multiple blocks
+blocks = [TransformerBlock(512, 8, 2048) for _ in range(6)]
+for block in blocks:
+    x = block(x)
+```
+
+### **Transformer Decoder Block**
+
+Transformer decoder with self-attention and cross-attention.
+
+```python
+class TransformerDecoderBlock:
+    """Transformer decoder block with cross-attention."""
+    
+    def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.0):
+        """Initialize decoder block."""
+```
+
+**Architecture:**
+1. Masked self-attention (causal)
+2. Cross-attention to encoder output
+3. Position-wise feed-forward network
+4. Residual connections and layer normalization
+
+**Example:**
+```python
+# Create decoder block
+decoder = TransformerDecoderBlock(d_model=512, num_heads=8, d_ff=2048)
+
+# Decoder input and encoder output
+tgt = Tensor(np.random.randn(2, 8, 512))   # Target sequence
+memory = Tensor(np.random.randn(2, 10, 512))  # Encoder output
+
+# Apply decoder
+output = decoder(tgt, memory)  # Shape: (2, 8, 512)
+
+# With causal mask for autoregressive generation
+tgt_mask = np.triu(np.ones((8, 8)), k=1)  # Upper triangular mask
+output = decoder(tgt, memory, tgt_mask=tgt_mask)
+```
+
+### **Positional Encoding**
+
+Sinusoidal position embeddings for sequence order information.
+
+```python
+class PositionalEncoding:
+    """Fixed sinusoidal positional encoding."""
+    
+    def __init__(self, d_model: int, max_len: int = 5000):
+        """Initialize positional encoding.
+        
+        Args:
+            d_model: Model dimension
+            max_len: Maximum sequence length
+        """
+```
+
+**Example:**
+```python
+# Create positional encoding
+pos_enc = PositionalEncoding(d_model=512, max_len=1000)
+
+# Add to embeddings
+embeddings = Tensor(np.random.randn(2, 100, 512))
+with_positions = pos_enc(embeddings)
+```
+
+---
+
+## 🌐 **Translation Components**
+
+### **Vocabulary**
+
+Token vocabulary management for translation tasks.
+
+```python
+class Vocabulary:
+    """Vocabulary for text tokenization."""
+    
+    def __init__(self, language: str):
+        """Initialize vocabulary with special tokens."""
+```
+
+**Special Tokens:**
+- `<PAD>`: Padding token (index 0)
+- `<SOS>`: Start of sequence (index 1)
+- `<EOS>`: End of sequence (index 2)
+- `<UNK>`: Unknown token (index 3)
+
+**Methods:**
+```python
+def add_sentence(self, sentence: str) -> None:
+    """Add all words in sentence to vocabulary."""
+
+def encode(self, sentence: str, max_length: Optional[int] = None) -> List[int]:
+    """Convert sentence to token indices."""
+
+def decode(self, indices: List[int], remove_special: bool = True) -> str:
+    """Convert indices back to sentence."""
+
+def save(self, filepath: str) -> None:
+    """Save vocabulary to JSON file."""
+
+@classmethod
+def load(cls, filepath: str) -> 'Vocabulary':
+    """Load vocabulary from JSON file."""
+```
+
+**Example:**
+```python
+# Create vocabularies
+src_vocab = Vocabulary("english")
+tgt_vocab = Vocabulary("spanish")
+
+# Build vocabulary
+src_vocab.add_sentence("hello world")
+tgt_vocab.add_sentence("hola mundo")
+
+# Encode/decode
+indices = src_vocab.encode("hello world", max_length=10)
+# [4, 5, 2, 0, 0, 0, 0, 0, 0, 0]  # words + EOS + padding
+
+text = src_vocab.decode(indices, remove_special=True)
+# "hello world"
+```
+
+### **Translation Transformer**
+
+Complete encoder-decoder transformer for translation.
+
+```python
+class TranslationTransformer:
+    """Transformer model for sequence-to-sequence translation."""
+    
+    def __init__(self, src_vocab_size: int, tgt_vocab_size: int,
+                 d_model: int = 256, n_heads: int = 8, n_layers: int = 3,
+                 d_ff: int = 1024, dropout: float = 0.1, max_len: int = 5000):
+        """Initialize translation model."""
+```
+
+**Methods:**
+```python
+def forward(self, src: Tensor, tgt: Tensor) -> Tensor:
+    """Forward pass for training.
+    
+    Args:
+        src: Source sequence indices (batch_size, src_len)
+        tgt: Target sequence indices (batch_size, tgt_len)
+        
+    Returns:
+        Output logits (batch_size, tgt_len, tgt_vocab_size)
+    """
+
+def generate(self, src: Tensor, max_length: int = 50,
+             sos_idx: int = 1, eos_idx: int = 2,
+             temperature: float = 1.0) -> List[int]:
+    """Generate translation using greedy/sampling decoding."""
+```
+
+**Example:**
+```python
+# Create model
+model = TranslationTransformer(
+    src_vocab_size=10000,
+    tgt_vocab_size=10000,
+    d_model=256,
+    n_heads=8,
+    n_layers=3
+)
+
+# Training
+src = Tensor(np.array([[1, 4, 5, 2, 0]]))  # Source with padding
+tgt_in = Tensor(np.array([[1, 6, 7, 8]]))  # Target input
+output = model(src, tgt_in)  # (1, 4, 10000)
+
+# Generation
+translation = model.generate(
+    src,
+    max_length=20,
+    temperature=0.8
 )
 ```
 
