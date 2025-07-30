@@ -31,15 +31,22 @@ def add(a: TensorLike, b: TensorLike) -> Tensor:
     if not isinstance(b, Tensor):
         b = Tensor(b)
     
-    # Broadcast tensors to compatible shapes
-    a_data, b_data = np.broadcast_arrays(a.data, b.data)
-    result_data = a_data + b_data
+    # Ensure tensors are on the same device
+    if a.device != b.device:
+        raise ValueError(f"Tensors must be on same device, got {a.device} and {b.device}")
     
-    # Create result tensor
+    # Use backend for computation
+    backend = a.backend
+    result_data = backend.add(a.backend_data, b.backend_data)
+    
+    # Create result tensor - convert to numpy to create new tensor
+    result_np = backend.to_numpy(result_data)
     requires_grad = a.requires_grad or b.requires_grad
     result = Tensor(
-        result_data,
+        result_np,
         requires_grad=requires_grad,
+        device=a.device,
+        dtype=a.dtype,
         name=f"add({a.name or 'tensor'}, {b.name or 'tensor'})"
     )
     
@@ -49,17 +56,13 @@ def add(a: TensorLike, b: TensorLike) -> Tensor:
             """Backward pass for addition."""
             if a.requires_grad:
                 # Reduce gradient to match original tensor shape
-                grad_a = reduce_gradient(grad_output, a.shape, a_data.shape)
+                grad_a = reduce_gradient(grad_output, a.shape, result.shape)
                 a.backward(grad_a)
-                if hasattr(a, '_backward'):
-                    a._backward()
             
             if b.requires_grad:
                 # Reduce gradient to match original tensor shape
-                grad_b = reduce_gradient(grad_output, b.shape, b_data.shape)
+                grad_b = reduce_gradient(grad_output, b.shape, result.shape)
                 b.backward(grad_b)
-                if hasattr(b, '_backward'):
-                    b._backward()
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "add")
     
@@ -298,21 +301,29 @@ def matmul(a: Tensor, b: Tensor) -> Tensor:
     Raises:
         ValueError: If matrix dimensions are incompatible
     """
+    # Ensure tensors are on the same device
+    if a.device != b.device:
+        raise ValueError(f"Tensors must be on same device, got {a.device} and {b.device}")
+    
     # Validate matrix dimensions
-    if a.data.ndim < 2 or b.data.ndim < 2:
+    if a.ndim < 2 or b.ndim < 2:
         raise ValueError(f"matmul requires 2D+ tensors, got shapes {a.shape} and {b.shape}")
     
     if a.shape[-1] != b.shape[-2]:
         raise ValueError(f"Incompatible matrix dimensions: {a.shape} @ {b.shape}")
     
-    # Perform matrix multiplication
-    result_data = np.matmul(a.data, b.data)
+    # Use backend for computation
+    backend = a.backend
+    result_data = backend.matmul(a.backend_data, b.backend_data)
     
-    # Create result tensor
+    # Create result tensor - convert to numpy to create new tensor
+    result_np = backend.to_numpy(result_data)
     requires_grad = a.requires_grad or b.requires_grad
     result = Tensor(
-        result_data,
+        result_np,
         requires_grad=requires_grad,
+        device=a.device,
+        dtype=a.dtype,
         name=f"matmul({a.name or 'tensor'}, {b.name or 'tensor'})"
     )
     
@@ -322,33 +333,51 @@ def matmul(a: Tensor, b: Tensor) -> Tensor:
             """Backward pass for matrix multiplication."""
             if a.requires_grad:
                 # grad_a = grad_output @ b.T
-                if b.data.ndim == 2:
-                    grad_a = np.matmul(grad_output, b.data.swapaxes(-2, -1))
+                # Convert grad_output to backend array temporarily
+                grad_backend = backend.from_numpy(grad_output)
+                grad_backend = backend.to_device(grad_backend, a.device.type.value)
+                
+                # Compute gradient using backend
+                # For matrix transpose, we need to specify the axes to swap
+                if b.ndim == 2:
+                    b_transposed = backend.transpose(b.backend_data, (1, 0))
                 else:
-                    grad_a = np.matmul(grad_output, np.swapaxes(b.data, -2, -1))
+                    # For higher dimensional tensors, swap last two axes
+                    axes = list(range(b.ndim))
+                    axes[-2], axes[-1] = axes[-1], axes[-2]
+                    b_transposed = backend.transpose(b.backend_data, tuple(axes))
+                grad_a_backend = backend.matmul(grad_backend, b_transposed)
+                grad_a = backend.to_numpy(grad_a_backend)
                 
                 # Reduce gradient if needed (e.g., batched operations on parameters)
                 if grad_a.shape != a.shape:
                     grad_a = reduce_gradient(grad_a, a.shape, grad_a.shape)
                 
                 a.backward(grad_a)
-                if hasattr(a, '_backward'):
-                    a._backward()
             
             if b.requires_grad:
                 # grad_b = a.T @ grad_output
-                if a.data.ndim == 2:
-                    grad_b = np.matmul(a.data.swapaxes(-2, -1), grad_output)
+                # Convert grad_output to backend array temporarily
+                grad_backend = backend.from_numpy(grad_output)
+                grad_backend = backend.to_device(grad_backend, b.device.type.value)
+                
+                # Compute gradient using backend
+                # For matrix transpose, we need to specify the axes to swap
+                if a.ndim == 2:
+                    a_transposed = backend.transpose(a.backend_data, (1, 0))
                 else:
-                    grad_b = np.matmul(np.swapaxes(a.data, -2, -1), grad_output)
+                    # For higher dimensional tensors, swap last two axes
+                    axes = list(range(a.ndim))
+                    axes[-2], axes[-1] = axes[-1], axes[-2]
+                    a_transposed = backend.transpose(a.backend_data, tuple(axes))
+                grad_b_backend = backend.matmul(a_transposed, grad_backend)
+                grad_b = backend.to_numpy(grad_b_backend)
                 
                 # Reduce gradient if needed (e.g., batched operations on parameters)
                 if grad_b.shape != b.shape:
                     grad_b = reduce_gradient(grad_b, b.shape, grad_b.shape)
                 
                 b.backward(grad_b)
-                if hasattr(b, '_backward'):
-                    b._backward()
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "matmul")
     

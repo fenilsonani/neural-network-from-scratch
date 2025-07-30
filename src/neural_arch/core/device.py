@@ -10,7 +10,8 @@ class DeviceType(Enum):
     """Supported device types for tensor operations."""
     
     CPU = "cpu"
-    CUDA = "cuda"  # Future GPU support
+    CUDA = "cuda"  # NVIDIA GPU support
+    MPS = "mps"    # Apple Silicon GPU support
     
     def __str__(self) -> str:
         return self.value
@@ -25,7 +26,7 @@ class Device:
     
     def __post_init__(self) -> None:
         """Validate device configuration."""
-        if self.type == DeviceType.CUDA and self.index is not None:
+        if self.type in (DeviceType.CUDA, DeviceType.MPS) and self.index is not None:
             if self.index < 0:
                 raise ValueError(f"Device index must be non-negative, got {self.index}")
     
@@ -38,6 +39,11 @@ class Device:
     def cuda(cls, index: int = 0) -> 'Device':
         """Create a CUDA device."""
         return cls(DeviceType.CUDA, index)
+    
+    @classmethod
+    def mps(cls, index: int = 0) -> 'Device':
+        """Create an MPS (Metal Performance Shaders) device."""
+        return cls(DeviceType.MPS, index)
     
     @classmethod
     def from_string(cls, device_str: str) -> 'Device':
@@ -64,6 +70,14 @@ class Device:
                 return cls.cuda(index)
             except (IndexError, ValueError) as e:
                 raise ValueError(f"Invalid CUDA device string: {device_str}") from e
+        elif device_str == "mps":
+            return cls.mps(0)
+        elif device_str.startswith("mps:"):
+            try:
+                index = int(device_str.split(":")[1])
+                return cls.mps(index)
+            except (IndexError, ValueError) as e:
+                raise ValueError(f"Invalid MPS device string: {device_str}") from e
         else:
             raise ValueError(f"Unsupported device string: {device_str}")
     
@@ -77,6 +91,16 @@ class Device:
         """Check if this is a CUDA device."""
         return self.type == DeviceType.CUDA
     
+    @property
+    def is_mps(self) -> bool:
+        """Check if this is an MPS device."""
+        return self.type == DeviceType.MPS
+    
+    @property
+    def is_gpu(self) -> bool:
+        """Check if this is any GPU device."""
+        return self.type in (DeviceType.CUDA, DeviceType.MPS)
+    
     def __str__(self) -> str:
         """String representation of the device."""
         if self.type == DeviceType.CPU:
@@ -85,6 +109,10 @@ class Device:
             if self.index is not None:
                 return f"cuda:{self.index}"
             return "cuda"
+        elif self.type == DeviceType.MPS:
+            if self.index is not None:
+                return f"mps:{self.index}"
+            return "mps"
         return str(self.type.value)
     
     def __repr__(self) -> str:
@@ -114,6 +142,8 @@ def set_default_device(device: Union[Device, str]) -> None:
 
 def get_device_capabilities() -> dict:
     """Get information about available devices and their capabilities."""
+    import sys
+    
     capabilities = {
         "cpu": {
             "available": True,
@@ -121,9 +151,41 @@ def get_device_capabilities() -> dict:
             "architecture": platform.machine(),
         },
         "cuda": {
-            "available": False,  # Would check for CUDA installation
+            "available": False,
             "devices": [],
+        },
+        "mps": {
+            "available": False,
+            "unified_memory": False,
         }
     }
+    
+    # Check for CUDA availability
+    try:
+        import cupy as cp
+        capabilities["cuda"]["available"] = True
+        # Get CUDA device info
+        for i in range(cp.cuda.runtime.getDeviceCount()):
+            with cp.cuda.Device(i):
+                props = cp.cuda.runtime.getDeviceProperties(i)
+                capabilities["cuda"]["devices"].append({
+                    "index": i,
+                    "name": props["name"].decode(),
+                    "memory": props["totalGlobalMem"],
+                    "compute_capability": f"{props['major']}.{props['minor']}"
+                })
+    except:
+        pass
+    
+    # Check for MPS availability (Apple Silicon)
+    if sys.platform == "darwin" and platform.machine() == "arm64":
+        try:
+            import mlx.core as mx
+            # Test if we can create an array
+            test = mx.array([1.0])
+            capabilities["mps"]["available"] = True
+            capabilities["mps"]["unified_memory"] = True
+        except:
+            pass
     
     return capabilities

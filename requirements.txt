@@ -25,5 +25,13 @@ tqdm>=4.64.0             # Optional: Progress bars for long training runs
 jupyter>=1.0.0           # Optional: Interactive notebooks for experimentation
 ipykernel>=6.0.0         # Optional: Jupyter kernel support
 
+# Optional GPU acceleration backends
+# These are platform-specific and completely optional
+# The framework automatically detects and uses available backends
+mlx>=0.5.0               # Optional: Apple Silicon GPU acceleration (M1/M2/M3)
+# cupy-cuda11x>=11.0.0   # Optional: NVIDIA GPU acceleration (uncomment for CUDA 11.x)
+# cupy-cuda12x>=12.0.0   # Optional: NVIDIA GPU acceleration (uncomment for CUDA 12.x)
+
 # Note: This neural network implementation is designed to work with ONLY numpy
 # All other dependencies are optional and provide enhanced development experience
+# GPU backends are automatically detected - the framework gracefully falls back to CPU

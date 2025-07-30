@@ -1,0 +1,240 @@
+"""NVIDIA CUDA backend using CuPy."""
+
+import numpy as np
+from typing import Any, Optional, Tuple, Union, List
+from .backend import Backend, register_backend
+
+try:
+    import cupy as cp
+    CUPY_AVAILABLE = True
+except ImportError:
+    CUPY_AVAILABLE = False
+    cp = None
+
+
+class CudaBackend(Backend):
+    """CuPy backend for NVIDIA GPU computation."""
+    
+    def __init__(self):
+        if not CUPY_AVAILABLE:
+            raise ImportError(
+                "CuPy is not installed. Install it with: pip install cupy-cuda11x"
+            )
+    
+    @property
+    def name(self) -> str:
+        return "cuda"
+    
+    @property
+    def is_available(self) -> bool:
+        if not CUPY_AVAILABLE:
+            return False
+        try:
+            # Test if CUDA is available
+            cp.cuda.Device(0).compute_capability
+            return True
+        except:
+            return False
+    
+    @property
+    def supports_gradients(self) -> bool:
+        return False  # CuPy doesn't have built-in autograd
+    
+    # Array creation
+    def array(self, data: Any, dtype: Optional[Any] = None) -> Any:
+        return cp.array(data, dtype=dtype)
+    
+    def zeros(self, shape: Tuple[int, ...], dtype: Optional[Any] = None) -> Any:
+        return cp.zeros(shape, dtype=dtype or cp.float32)
+    
+    def ones(self, shape: Tuple[int, ...], dtype: Optional[Any] = None) -> Any:
+        return cp.ones(shape, dtype=dtype or cp.float32)
+    
+    def full(self, shape: Tuple[int, ...], fill_value: float, dtype: Optional[Any] = None) -> Any:
+        return cp.full(shape, fill_value, dtype=dtype or cp.float32)
+    
+    def arange(self, start: float, stop: float, step: float = 1.0, dtype: Optional[Any] = None) -> Any:
+        return cp.arange(start, stop, step, dtype=dtype or cp.float32)
+    
+    def random_normal(self, shape: Tuple[int, ...], mean: float = 0.0, std: float = 1.0, dtype: Optional[Any] = None) -> Any:
+        result = cp.random.normal(mean, std, shape)
+        if dtype:
+            result = result.astype(dtype)
+        return result.astype(cp.float32)
+    
+    def random_uniform(self, shape: Tuple[int, ...], low: float = 0.0, high: float = 1.0, dtype: Optional[Any] = None) -> Any:
+        result = cp.random.uniform(low, high, shape)
+        if dtype:
+            result = result.astype(dtype)
+        return result.astype(cp.float32)
+    
+    # Shape operations
+    def reshape(self, x: Any, shape: Tuple[int, ...]) -> Any:
+        return x.reshape(shape)
+    
+    def transpose(self, x: Any, axes: Optional[Tuple[int, ...]] = None) -> Any:
+        return cp.transpose(x, axes)
+    
+    def squeeze(self, x: Any, axis: Optional[Union[int, Tuple[int, ...]]] = None) -> Any:
+        return cp.squeeze(x, axis)
+    
+    def expand_dims(self, x: Any, axis: int) -> Any:
+        return cp.expand_dims(x, axis)
+    
+    # Math operations
+    def add(self, x: Any, y: Any) -> Any:
+        return cp.add(x, y)
+    
+    def subtract(self, x: Any, y: Any) -> Any:
+        return cp.subtract(x, y)
+    
+    def multiply(self, x: Any, y: Any) -> Any:
+        return cp.multiply(x, y)
+    
+    def divide(self, x: Any, y: Any) -> Any:
+        return cp.divide(x, y)
+    
+    def power(self, x: Any, y: Any) -> Any:
+        return cp.power(x, y)
+    
+    def matmul(self, x: Any, y: Any) -> Any:
+        return cp.matmul(x, y)
+    
+    def dot(self, x: Any, y: Any) -> Any:
+        return cp.dot(x, y)
+    
+    # Reduction operations
+    def sum(self, x: Any, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Any:
+        return cp.sum(x, axis=axis, keepdims=keepdims)
+    
+    def mean(self, x: Any, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Any:
+        return cp.mean(x, axis=axis, keepdims=keepdims)
+    
+    def max(self, x: Any, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Any:
+        return cp.max(x, axis=axis, keepdims=keepdims)
+    
+    def min(self, x: Any, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Any:
+        return cp.min(x, axis=axis, keepdims=keepdims)
+    
+    def argmax(self, x: Any, axis: Optional[int] = None) -> Any:
+        return cp.argmax(x, axis=axis)
+    
+    def argmin(self, x: Any, axis: Optional[int] = None) -> Any:
+        return cp.argmin(x, axis=axis)
+    
+    # Activation functions
+    def exp(self, x: Any) -> Any:
+        return cp.exp(x)
+    
+    def log(self, x: Any) -> Any:
+        return cp.log(x)
+    
+    def sqrt(self, x: Any) -> Any:
+        return cp.sqrt(x)
+    
+    def abs(self, x: Any) -> Any:
+        return cp.abs(x)
+    
+    def sign(self, x: Any) -> Any:
+        return cp.sign(x)
+    
+    def clip(self, x: Any, min_val: float, max_val: float) -> Any:
+        return cp.clip(x, min_val, max_val)
+    
+    # Comparison operations
+    def equal(self, x: Any, y: Any) -> Any:
+        return cp.equal(x, y)
+    
+    def not_equal(self, x: Any, y: Any) -> Any:
+        return cp.not_equal(x, y)
+    
+    def less(self, x: Any, y: Any) -> Any:
+        return cp.less(x, y)
+    
+    def less_equal(self, x: Any, y: Any) -> Any:
+        return cp.less_equal(x, y)
+    
+    def greater(self, x: Any, y: Any) -> Any:
+        return cp.greater(x, y)
+    
+    def greater_equal(self, x: Any, y: Any) -> Any:
+        return cp.greater_equal(x, y)
+    
+    # Array manipulation
+    def concatenate(self, arrays: List[Any], axis: int = 0) -> Any:
+        return cp.concatenate(arrays, axis=axis)
+    
+    def stack(self, arrays: List[Any], axis: int = 0) -> Any:
+        return cp.stack(arrays, axis=axis)
+    
+    def split(self, x: Any, indices_or_sections: Union[int, List[int]], axis: int = 0) -> List[Any]:
+        return cp.split(x, indices_or_sections, axis=axis)
+    
+    # Type conversion
+    def astype(self, x: Any, dtype: Any) -> Any:
+        return x.astype(dtype)
+    
+    def to_numpy(self, x: Any) -> np.ndarray:
+        return cp.asnumpy(x)
+    
+    def from_numpy(self, x: np.ndarray, dtype: Optional[Any] = None) -> Any:
+        result = cp.asarray(x)
+        if dtype:
+            result = result.astype(dtype)
+        return result
+    
+    # Device operations
+    def to_device(self, x: Any, device: str) -> Any:
+        if device == "cpu":
+            # Return numpy array for CPU
+            return self.to_numpy(x)
+        elif device.startswith("cuda"):
+            # Parse device index
+            if device == "cuda":
+                device_id = 0
+            else:
+                try:
+                    device_id = int(device.split(":")[1])
+                except:
+                    device_id = 0
+            
+            # Move to specified GPU
+            with cp.cuda.Device(device_id):
+                return cp.asarray(x)
+        else:
+            raise ValueError(f"CuPy backend supports cpu/cuda:N, got {device}")
+    
+    def device_of(self, x: Any) -> str:
+        if isinstance(x, np.ndarray):
+            return "cpu"
+        return f"cuda:{x.device.id}"
+    
+    # Utility functions
+    def is_array(self, x: Any) -> bool:
+        return isinstance(x, (cp.ndarray, np.ndarray))
+    
+    def shape(self, x: Any) -> Tuple[int, ...]:
+        return x.shape
+    
+    def size(self, x: Any) -> int:
+        return x.size
+    
+    def dtype(self, x: Any) -> Any:
+        return x.dtype
+    
+    # Advanced operations
+    def einsum(self, equation: str, *operands) -> Any:
+        return cp.einsum(equation, *operands)
+    
+    def where(self, condition: Any, x: Any, y: Any) -> Any:
+        return cp.where(condition, x, y)
+    
+    def unique(self, x: Any, return_counts: bool = False) -> Union[Any, Tuple[Any, Any]]:
+        if return_counts:
+            return cp.unique(x, return_counts=True)
+        return cp.unique(x)
+
+
+# Register the CUDA backend
+if CUPY_AVAILABLE:
+    register_backend("cuda", CudaBackend)

@@ -8,7 +8,8 @@ from dataclasses import dataclass
 import logging
 
 from .dtype import DType, get_default_dtype
-from .device import Device, get_default_device
+from .device import Device, get_default_device, DeviceType
+from ..backends import get_backend, set_backend, Backend
 
 # Type aliases
 TensorLike = Union['Tensor', np.ndarray, list, float, int]
@@ -84,69 +85,109 @@ class Tensor:
         if not isinstance(requires_grad, bool):
             raise TypeError(f"requires_grad must be bool, got {type(requires_grad)}")
         
-        # Convert data to numpy array with proper dtype
-        self._data = self._validate_and_convert_data(data, dtype)
-        
         # Core tensor properties
         self._requires_grad = requires_grad and _grad_enabled
         self._dtype = dtype or get_default_dtype()
         self._device = device or get_default_device()
         self._name = name
         
+        # Select backend based on device
+        self._backend = self._get_backend_for_device(self._device)
+        
+        # Convert data using backend
+        self._data = self._validate_and_convert_data(data, dtype)
+        
         # Gradient computation
-        self._grad: Optional[np.ndarray] = None
+        self._grad: Optional[Any] = None  # Backend array type
         self._grad_fn: Optional[GradientFunction] = None
         self._version = 0  # For detecting in-place modifications
         
         # Enterprise features
         self._creation_context = self._get_creation_context()
-        self._memory_usage = self._data.nbytes
+        self._memory_usage = self._calculate_memory_usage()
         
         # Weak references to dependent tensors for graph cleanup
         self._dependents: List[weakref.ref] = []
         
-        logger.debug(f"Created tensor {self._name} with shape {self.shape} on {self._device}")
+        logger.debug(f"Created tensor {self._name} with shape {self.shape} on {self._device} using {self._backend.name} backend")
     
-    def _validate_and_convert_data(self, data: TensorLike, dtype: Optional[DType]) -> np.ndarray:
-        """Validate and convert input data to numpy array.
+    def _get_backend_for_device(self, device: Device) -> Backend:
+        """Get appropriate backend for device."""
+        if device.type == DeviceType.CPU:
+            return get_backend("numpy")
+        elif device.type == DeviceType.CUDA:
+            return get_backend("cuda")
+        elif device.type == DeviceType.MPS:
+            return get_backend("mps")
+        else:
+            # Default to numpy backend
+            return get_backend("numpy")
+    
+    def _calculate_memory_usage(self) -> int:
+        """Calculate memory usage of tensor data."""
+        # Get numpy view to calculate size
+        np_data = self._backend.to_numpy(self._data)
+        return np_data.nbytes
+    
+    def _validate_and_convert_data(self, data: TensorLike, dtype: Optional[DType]) -> Any:
+        """Validate and convert input data to backend array.
         
         Args:
             data: Input data
             dtype: Target data type
             
         Returns:
-            Validated numpy array
+            Backend array
             
         Raises:
             TypeError: If data type is invalid
             ValueError: If data contains invalid values
         """
+        # First convert to numpy for validation
         if isinstance(data, Tensor):
-            array = data._data.copy()
+            # Handle device transfers if needed
+            if data._device != self._device:
+                np_array = data._backend.to_numpy(data._data)
+            else:
+                # Same device, can potentially copy directly
+                np_array = data._backend.to_numpy(data._data)
         elif isinstance(data, np.ndarray):
-            array = data.copy()
+            np_array = data.copy()
         elif isinstance(data, (list, tuple)):
-            array = np.array(data)
+            np_array = np.array(data)
         elif isinstance(data, (int, float)):
-            array = np.array(data)
+            np_array = np.array(data)
         elif isinstance(data, (np.integer, np.floating)):
             # Handle numpy scalar types
-            array = np.array(data)
+            np_array = np.array(data)
         else:
-            raise TypeError(f"Unsupported data type: {type(data)}")
+            # Check if it's a backend array type
+            if self._backend.is_array(data):
+                np_array = self._backend.to_numpy(data)
+            else:
+                raise TypeError(f"Unsupported data type: {type(data)}")
         
         # Apply dtype conversion
         target_dtype = dtype or get_default_dtype()
-        array = array.astype(target_dtype.numpy_dtype)
+        np_array = np_array.astype(target_dtype.numpy_dtype)
         
         # Validate for NaN/Inf values
-        if not np.all(np.isfinite(array)):
-            if np.any(np.isnan(array)):
+        if not np.all(np.isfinite(np_array)):
+            if np.any(np.isnan(np_array)):
                 raise ValueError("Tensor data contains NaN values")
-            if np.any(np.isinf(array)):
+            if np.any(np.isinf(np_array)):
                 raise ValueError("Tensor data contains infinite values")
         
-        return array
+        # Convert to backend array
+        backend_array = self._backend.from_numpy(np_array)
+        
+        # Move to correct device if needed
+        device_str = self._device.type.value
+        if self._device.index is not None:
+            device_str = f"{device_str}:{self._device.index}"
+        backend_array = self._backend.to_device(backend_array, device_str)
+        
+        return backend_array
     
     def _get_creation_context(self) -> dict:
         """Get context information for tensor creation (for debugging)."""
@@ -167,8 +208,8 @@ class Tensor:
     
     @property
     def data(self) -> np.ndarray:
-        """Get the underlying data array."""
-        return self._data
+        """Get the underlying data array as numpy."""
+        return self._backend.to_numpy(self._data)
     
     @data.setter
     def data(self, value: np.ndarray) -> None:
@@ -176,26 +217,35 @@ class Tensor:
         if not isinstance(value, np.ndarray):
             raise TypeError(f"Expected np.ndarray, got {type(value)}")
         
-        if value.shape != self._data.shape:
-            raise ValueError(f"Shape mismatch: expected {self._data.shape}, got {value.shape}")
+        if value.shape != self.shape:
+            raise ValueError(f"Shape mismatch: expected {self.shape}, got {value.shape}")
         
-        self._data = value.astype(self._dtype.numpy_dtype)
+        # Convert numpy to backend array
+        value = value.astype(self._dtype.numpy_dtype)
+        backend_array = self._backend.from_numpy(value)
+        
+        # Move to correct device
+        device_str = self._device.type.value
+        if self._device.index is not None:
+            device_str = f"{device_str}:{self._device.index}"
+        self._data = self._backend.to_device(backend_array, device_str)
+        
         self._version += 1  # Track in-place modifications
     
     @property
     def shape(self) -> Shape:
         """Get tensor shape."""
-        return self._data.shape
+        return self._backend.shape(self._data)
     
     @property
     def ndim(self) -> int:
         """Get number of dimensions."""
-        return self._data.ndim
+        return len(self._backend.shape(self._data))
     
     @property
     def size(self) -> int:
         """Get total number of elements."""
-        return self._data.size
+        return self._backend.size(self._data)
     
     @property
     def dtype(self) -> DType:
@@ -214,19 +264,32 @@ class Tensor:
     
     @property
     def grad(self) -> Optional[np.ndarray]:
-        """Get accumulated gradients."""
-        return self._grad
+        """Get accumulated gradients as numpy."""
+        if self._grad is None:
+            return None
+        return self._backend.to_numpy(self._grad)
     
     @grad.setter
     def grad(self, value: Optional[np.ndarray]) -> None:
         """Set accumulated gradients."""
-        if value is not None and not isinstance(value, np.ndarray):
+        if value is None:
+            self._grad = None
+            return
+            
+        if not isinstance(value, np.ndarray):
             raise TypeError(f"Expected np.ndarray or None, got {type(value)}")
         
-        if value is not None and value.shape != self._data.shape:
+        if value.shape != self.shape:
             raise ValueError(f"Gradient shape {value.shape} doesn't match tensor shape {self.shape}")
         
-        self._grad = value
+        # Convert to backend array
+        backend_grad = self._backend.from_numpy(value)
+        
+        # Move to same device as tensor
+        device_str = self._device.type.value
+        if self._device.index is not None:
+            device_str = f"{device_str}:{self._device.index}"
+        self._grad = self._backend.to_device(backend_grad, device_str)
     
     @property
     def grad_fn(self) -> Optional[GradientFunction]:
@@ -237,6 +300,16 @@ class Tensor:
     def name(self) -> Optional[str]:
         """Get tensor name."""
         return self._name
+    
+    @property
+    def backend(self) -> Backend:
+        """Get the backend used by this tensor."""
+        return self._backend
+    
+    @property
+    def backend_data(self) -> Any:
+        """Get the raw backend array (for internal use)."""
+        return self._data
     
     def zero_grad(self) -> None:
         """Reset gradients to None with memory cleanup."""
@@ -265,13 +338,13 @@ class Tensor:
         
         # Default gradient for scalar outputs
         if gradient is None:
-            if self._data.size == 1:
-                gradient = np.ones_like(self._data)
+            if self.size == 1:
+                gradient = np.ones(self.shape, dtype=self._dtype.numpy_dtype)
             else:
                 raise ValueError("Gradient must be specified for non-scalar tensors")
         
         # Validate gradient shape
-        if gradient.shape != self._data.shape:
+        if gradient.shape != self.shape:
             raise ValueError(f"Gradient shape {gradient.shape} doesn't match tensor shape {self.shape}")
         
         # Handle NaN/Inf gradients and extreme values for numerical stability
@@ -288,11 +361,18 @@ class Tensor:
             logger.warning(f"Extremely large gradient detected ({max_abs_grad}), applying clipping")
             processed_gradient = np.clip(processed_gradient, -10.0, 10.0)
         
+        # Convert gradient to backend array
+        backend_grad = self._backend.from_numpy(processed_gradient)
+        device_str = self._device.type.value
+        if self._device.index is not None:
+            device_str = f"{device_str}:{self._device.index}"
+        backend_grad = self._backend.to_device(backend_grad, device_str)
+        
         # Accumulate gradients
         if self._grad is None:
-            self._grad = processed_gradient.copy()
+            self._grad = backend_grad
         else:
-            self._grad += processed_gradient
+            self._grad = self._backend.add(self._grad, backend_grad)
         
         # Propagate gradients through computational graph
         if self._grad_fn is not None:
@@ -306,8 +386,10 @@ class Tensor:
         Returns:
             New tensor with same data but no gradient tracking
         """
+        # Convert to numpy for creating new tensor
+        np_data = self._backend.to_numpy(self._data)
         return Tensor(
-            self._data.copy(),
+            np_data,
             requires_grad=False,
             dtype=self._dtype,
             device=self._device,
@@ -320,8 +402,10 @@ class Tensor:
         Returns:
             New tensor with copied data and gradient tracking
         """
+        # Convert to numpy for creating new tensor
+        np_data = self._backend.to_numpy(self._data)
         cloned = Tensor(
-            self._data.copy(),
+            np_data,
             requires_grad=self._requires_grad,
             dtype=self._dtype,
             device=self._device,
