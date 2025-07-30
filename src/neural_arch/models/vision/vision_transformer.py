@@ -112,9 +112,10 @@ class Attention(Module):
         qkv_data = qkv_data.transpose(2, 0, 3, 1, 4)  # 3, B, num_heads, N, head_dim
         q, k, v = qkv_data[0], qkv_data[1], qkv_data[2]
         
-        # Attention scores
-        attn = (q @ k.transpose(-2, -1)) * self.scale
-        attn = softmax(Tensor(attn, requires_grad=x.requires_grad), dim=-1)
+        # Attention scores  
+        k_transposed = np.transpose(k, (0, 1, 3, 2))  # Transpose last two dimensions
+        attn = (q @ k_transposed) * self.scale
+        attn = softmax(Tensor(attn, requires_grad=x.requires_grad), axis=-1)
         
         if self.attn_drop:
             attn = self.attn_drop(attn)
