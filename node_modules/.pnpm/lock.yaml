@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      pytest-cov:
+        specifier: ^0.0.1
+        version: 0.0.1
+
+packages:
+
+  pytest-cov@0.0.1:
+    resolution: {integrity: sha512-S51RGO+1hvP/01nv+up7wOnkcoJXLVgc2Odmt6N6T1Vs1WV5EUImnsSxBcnDz6AxCqJrGHHI6eM2jOtqX+h9BQ==}
+
+snapshots:
+
+  pytest-cov@0.0.1: {}

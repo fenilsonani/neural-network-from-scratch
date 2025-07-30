@@ -4,7 +4,7 @@ Neural Architecture Documentation
 **Neural Architecture** is an enterprise-grade neural network framework built from scratch with NumPy, 
 featuring comprehensive tensor operations, automatic differentiation, and production-ready architecture.
 
-.. image:: https://img.shields.io/badge/version-3.0.0-blue.svg
+.. image:: https://img.shields.io/badge/version-3.2.0-blue.svg
    :target: https://github.com/your-repo/neural-arch
    :alt: Version
 
@@ -12,8 +12,11 @@ featuring comprehensive tensor operations, automatic differentiation, and produc
    :target: https://python.org
    :alt: Python Version
 
-.. image:: https://img.shields.io/badge/tests-182%20passing-brightgreen.svg
+.. image:: https://img.shields.io/badge/tests-700+%20passing-brightgreen.svg
    :alt: Test Status
+
+.. image:: https://img.shields.io/badge/coverage-74%25+-success.svg
+   :alt: Coverage
 
 Key Features
 -----------
@@ -33,7 +36,8 @@ Key Features
 
 🔬 **Research & Production Ready**
    - 100% NumPy implementation for transparency
-   - Comprehensive test suite (182 tests, 100% passing)
+   - Enterprise-grade test suite (700+ tests, 74%+ coverage)
+   - Real API integration tests (no mocks)
    - Performance benchmarking and profiling
    - Extensive documentation with translation example
    - Trained on 120k+ Tatoeba sentence pairs

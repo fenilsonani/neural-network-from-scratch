@@ -1,0 +1,5 @@
+{
+	"dependencies": {
+		"pytest-cov": "^0.0.1"
+	}
+}
