@@ -43,6 +43,27 @@ class MPSBackend(Backend):
     def supports_gradients(self) -> bool:
         return True  # MLX has built-in autograd
     
+    # Dtype attributes
+    @property
+    def float32(self):
+        return mx.float32
+    
+    @property
+    def float64(self):
+        return mx.float64
+    
+    @property
+    def int32(self):
+        return mx.int32
+    
+    @property
+    def int64(self):
+        return mx.int64
+    
+    @property
+    def bool(self):
+        return mx.bool_
+    
     # Array creation
     def array(self, data: Any, dtype: Optional[Any] = None) -> Any:
         if dtype is None:

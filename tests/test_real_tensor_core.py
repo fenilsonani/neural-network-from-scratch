@@ -132,10 +132,10 @@ class TestRealTensorCore:
     def test_tensor_dtype_creation(self):
         """Test tensor creation with specific dtypes."""
         # Create with numpy dtype
-        t1 = Tensor([1, 2, 3], dtype=DType.float32())
+        t1 = Tensor([1, 2, 3], dtype=DType.FLOAT32)
         assert t1.dtype == np.float32
         
-        t2 = Tensor([1, 2, 3], dtype=DType.int32())
+        t2 = Tensor([1, 2, 3], dtype=DType.INT32)
         assert t2.dtype == np.int32
         
         # Test with direct numpy dtype

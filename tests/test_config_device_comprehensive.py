@@ -205,15 +205,15 @@ class TestConfigDeviceComprehensive:
     def test_dtype_comprehensive(self):
         """Test DType functionality comprehensively."""
         # Test all basic dtypes
-        float32 = DType.float32()
-        float64 = DType.float64()
-        int32 = DType.int32()
-        int64 = DType.int64()
+        float32 = DType.FLOAT32
+        float64 = DType.FLOAT64
+        int32 = DType.INT32
+        int64 = DType.INT64
         
         # Test properties
-        assert float32.is_floating_point is True
+        assert float32.is_floating is True
         assert float32.is_integer is False
-        assert int32.is_floating_point is False
+        assert int32.is_floating is False
         assert int32.is_integer is True
         
         # Test numpy dtype mapping
@@ -234,12 +234,12 @@ class TestConfigDeviceComprehensive:
         assert 'int32' in str(int32).lower()
         
         # Test equality
-        assert float32 == DType.float32()
+        assert float32 == DType.FLOAT32
         assert float32 != float64
         assert float32 != int32
         
         # Test hashing
-        assert hash(float32) == hash(DType.float32())
+        assert hash(float32) == hash(DType.FLOAT32)
         assert hash(float32) != hash(float64)
     
     def test_config_functions_comprehensive(self):

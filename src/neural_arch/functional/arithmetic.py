@@ -41,7 +41,10 @@ def add(a: TensorLike, b: TensorLike) -> Tensor:
     
     # Create result tensor - convert to numpy to create new tensor
     result_np = backend.to_numpy(result_data)
-    requires_grad = a.requires_grad or b.requires_grad
+    
+    # Check global gradient state and input tensors
+    from ..core.tensor import is_grad_enabled
+    requires_grad = is_grad_enabled() and (a.requires_grad or b.requires_grad)
     result = Tensor(
         result_np,
         requires_grad=requires_grad,
@@ -57,12 +60,48 @@ def add(a: TensorLike, b: TensorLike) -> Tensor:
             if a.requires_grad:
                 # Reduce gradient to match original tensor shape
                 grad_a = reduce_gradient(grad_output, a.shape, result.shape)
-                a.backward(grad_a)
+                
+                # Accumulate gradients
+                if a._grad is None:
+                    a._grad = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    a._grad = a._backend.to_device(a._grad, device_str)
+                else:
+                    grad_backend = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    grad_backend = a._backend.to_device(grad_backend, device_str)
+                    a._grad = a._backend.add(a._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if a._grad_fn is not None:
+                    a._grad_fn.apply(grad_a)
             
             if b.requires_grad:
                 # Reduce gradient to match original tensor shape
                 grad_b = reduce_gradient(grad_output, b.shape, result.shape)
-                b.backward(grad_b)
+                
+                # Accumulate gradients
+                if b._grad is None:
+                    b._grad = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    b._grad = b._backend.to_device(b._grad, device_str)
+                else:
+                    grad_backend = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    grad_backend = b._backend.to_device(grad_backend, device_str)
+                    b._grad = b._backend.add(b._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if b._grad_fn is not None:
+                    b._grad_fn.apply(grad_b)
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "add")
     
@@ -109,16 +148,48 @@ def sub(a: TensorLike, b: TensorLike) -> Tensor:
             """Backward pass for subtraction."""
             if a.requires_grad:
                 grad_a = reduce_gradient(grad_output, a.shape, a_data.shape)
-                a.backward(grad_a)
-                if hasattr(a, '_backward'):
-                    a._backward()
+                
+                # Accumulate gradients
+                if a._grad is None:
+                    a._grad = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    a._grad = a._backend.to_device(a._grad, device_str)
+                else:
+                    grad_backend = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    grad_backend = a._backend.to_device(grad_backend, device_str)
+                    a._grad = a._backend.add(a._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists  
+                if a._grad_fn is not None:
+                    a._grad_fn.apply(grad_a)
             
             if b.requires_grad:
                 # Negative gradient for subtraction
                 grad_b = reduce_gradient(-grad_output, b.shape, b_data.shape)
-                b.backward(grad_b)
-                if hasattr(b, '_backward'):
-                    b._backward()
+                
+                # Accumulate gradients
+                if b._grad is None:
+                    b._grad = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    b._grad = b._backend.to_device(b._grad, device_str)
+                else:
+                    grad_backend = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    grad_backend = b._backend.to_device(grad_backend, device_str)
+                    b._grad = b._backend.add(b._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if b._grad_fn is not None:
+                    b._grad_fn.apply(grad_b)
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "sub")
     
@@ -166,16 +237,48 @@ def mul(a: TensorLike, b: TensorLike) -> Tensor:
             if a.requires_grad:
                 # Gradient is grad_output * b
                 grad_a = reduce_gradient(grad_output * b_data, a.shape, a_data.shape)
-                a.backward(grad_a)
-                if hasattr(a, '_backward'):
-                    a._backward()
+                
+                # Accumulate gradients
+                if a._grad is None:
+                    a._grad = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    a._grad = a._backend.to_device(a._grad, device_str)
+                else:
+                    grad_backend = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    grad_backend = a._backend.to_device(grad_backend, device_str)
+                    a._grad = a._backend.add(a._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if a._grad_fn is not None:
+                    a._grad_fn.apply(grad_a)
             
             if b.requires_grad:
                 # Gradient is grad_output * a
                 grad_b = reduce_gradient(grad_output * a_data, b.shape, b_data.shape)
-                b.backward(grad_b)
-                if hasattr(b, '_backward'):
-                    b._backward()
+                
+                # Accumulate gradients
+                if b._grad is None:
+                    b._grad = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    b._grad = b._backend.to_device(b._grad, device_str)
+                else:
+                    grad_backend = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    grad_backend = b._backend.to_device(grad_backend, device_str)
+                    b._grad = b._backend.add(b._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if b._grad_fn is not None:
+                    b._grad_fn.apply(grad_b)
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "mul")
     
@@ -230,16 +333,48 @@ def div(a: TensorLike, b: TensorLike) -> Tensor:
             if a.requires_grad:
                 # Gradient is grad_output / b
                 grad_a = reduce_gradient(grad_output / b_data, a.shape, a_data.shape)
-                a.backward(grad_a)
-                if hasattr(a, '_backward'):
-                    a._backward()
+                
+                # Accumulate gradients
+                if a._grad is None:
+                    a._grad = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    a._grad = a._backend.to_device(a._grad, device_str)
+                else:
+                    grad_backend = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    grad_backend = a._backend.to_device(grad_backend, device_str)
+                    a._grad = a._backend.add(a._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if a._grad_fn is not None:
+                    a._grad_fn.apply(grad_a)
             
             if b.requires_grad:
                 # Gradient is -grad_output * a / b²
                 grad_b = reduce_gradient(-grad_output * a_data / (b_data ** 2), b.shape, b_data.shape)
-                b.backward(grad_b)
-                if hasattr(b, '_backward'):
-                    b._backward()
+                
+                # Accumulate gradients
+                if b._grad is None:
+                    b._grad = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    b._grad = b._backend.to_device(b._grad, device_str)
+                else:
+                    grad_backend = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    grad_backend = b._backend.to_device(grad_backend, device_str)
+                    b._grad = b._backend.add(b._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if b._grad_fn is not None:
+                    b._grad_fn.apply(grad_b)
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "div")
     
@@ -273,9 +408,26 @@ def neg(a: Tensor) -> Tensor:
     if a.requires_grad:
         def backward_fn(grad_output: np.ndarray) -> None:
             """Backward pass for negation."""
-            a.backward(-grad_output)
-            if hasattr(a, '_backward'):
-                a._backward()
+            grad_a = -grad_output
+            
+            # Accumulate gradients
+            if a._grad is None:
+                a._grad = a._backend.from_numpy(grad_a)
+                device_str = a._device.type.value
+                if a._device.index is not None:
+                    device_str = f"{device_str}:{a._device.index}"
+                a._grad = a._backend.to_device(a._grad, device_str)
+            else:
+                grad_backend = a._backend.from_numpy(grad_a)
+                device_str = a._device.type.value
+                if a._device.index is not None:
+                    device_str = f"{device_str}:{a._device.index}"
+                grad_backend = a._backend.to_device(grad_backend, device_str)
+                a._grad = a._backend.add(a._grad, grad_backend)
+            
+            # Continue backward propagation if gradient function exists
+            if a._grad_fn is not None:
+                a._grad_fn.apply(grad_a)
         
         result._grad_fn = GradientFunction(backward_fn, [a], "neg")
     
@@ -353,7 +505,24 @@ def matmul(a: Tensor, b: Tensor) -> Tensor:
                 if grad_a.shape != a.shape:
                     grad_a = reduce_gradient(grad_a, a.shape, grad_a.shape)
                 
-                a.backward(grad_a)
+                # Accumulate gradients
+                if a._grad is None:
+                    a._grad = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    a._grad = a._backend.to_device(a._grad, device_str)
+                else:
+                    grad_backend_acc = a._backend.from_numpy(grad_a)
+                    device_str = a._device.type.value
+                    if a._device.index is not None:
+                        device_str = f"{device_str}:{a._device.index}"
+                    grad_backend_acc = a._backend.to_device(grad_backend_acc, device_str)
+                    a._grad = a._backend.add(a._grad, grad_backend_acc)
+                
+                # Continue backward propagation if gradient function exists
+                if a._grad_fn is not None:
+                    a._grad_fn.apply(grad_a)
             
             if b.requires_grad:
                 # grad_b = a.T @ grad_output
@@ -377,7 +546,24 @@ def matmul(a: Tensor, b: Tensor) -> Tensor:
                 if grad_b.shape != b.shape:
                     grad_b = reduce_gradient(grad_b, b.shape, grad_b.shape)
                 
-                b.backward(grad_b)
+                # Accumulate gradients
+                if b._grad is None:
+                    b._grad = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    b._grad = b._backend.to_device(b._grad, device_str)
+                else:
+                    grad_backend_acc = b._backend.from_numpy(grad_b)
+                    device_str = b._device.type.value
+                    if b._device.index is not None:
+                        device_str = f"{device_str}:{b._device.index}"
+                    grad_backend_acc = b._backend.to_device(grad_backend_acc, device_str)
+                    b._grad = b._backend.add(b._grad, grad_backend_acc)
+                
+                # Continue backward propagation if gradient function exists
+                if b._grad_fn is not None:
+                    b._grad_fn.apply(grad_b)
         
         result._grad_fn = GradientFunction(backward_fn, [a, b], "matmul")
     

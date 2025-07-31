@@ -24,13 +24,21 @@ def auto_select_backend(prefer_gpu: bool = True) -> Backend:
     # On Apple Silicon Macs, prefer MPS
     if sys.platform == "darwin" and platform.machine() == "arm64":
         if "mps" in available:
-            set_backend("mps")
-            return get_backend()
+            try:
+                set_backend("mps")
+                return get_backend()
+            except (ValueError, ImportError):
+                # MPS backend not actually available, fall through
+                pass
     
     # On other systems, prefer CUDA
     if "cuda" in available:
-        set_backend("cuda")
-        return get_backend()
+        try:
+            set_backend("cuda")
+            return get_backend()
+        except (ValueError, ImportError):
+            # CUDA backend not actually available, fall through
+            pass
     
     # Fallback to CPU
     set_backend("numpy")

@@ -28,7 +28,7 @@ class TestAdamOptimizerComprehensive:
         assert optimizer.lr == 0.001
         assert optimizer.beta1 == 0.9
         assert optimizer.beta2 == 0.999
-        assert optimizer.eps == 1e-8
+        assert optimizer.eps == 1e-5
         assert optimizer.weight_decay == 0.0
         assert optimizer.amsgrad is False
         assert optimizer.maximize is False

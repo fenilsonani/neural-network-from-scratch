@@ -89,18 +89,22 @@ class MultiHeadCausalAttention(Module):
         q, k, v = qkv_data[0], qkv_data[1], qkv_data[2]
         
         # Compute attention scores
-        attn = (q @ k.transpose(-2, -1)) * self.scale
+        k_transposed = np.transpose(k, (0, 1, 3, 2))  # Transpose last two dimensions
+        attn = (q @ k_transposed) * self.scale
         
         # Apply causal mask
         mask = np.tril(np.ones((T, T)))
-        attn = np.where(mask[None, None, :, :] == 0, -np.inf, attn)
+        attn = np.where(mask[None, None, :, :] == 0, -1e4, attn)  # Use -1e4 instead of -inf
         
         # Apply attention mask if provided
         if attn_mask is not None:
-            attn = attn + attn_mask.data[:, None, None, :]
+            # attn_mask shape: (seq_len, seq_len)
+            # attn shape: (batch_size, num_heads, seq_len, seq_len)
+            # Broadcast attn_mask to match attn shape
+            attn = attn + attn_mask.data[None, None, :, :]
         
         # Softmax and dropout
-        attn = softmax(Tensor(attn, requires_grad=x.requires_grad), dim=-1)
+        attn = softmax(Tensor(attn, requires_grad=x.requires_grad), axis=-1)
         if self.dropout:
             attn = self.dropout(attn)
         
@@ -234,7 +238,8 @@ class CLIPTextTransformer(Module):
     
     def build_attention_mask(self, seq_len: int) -> Tensor:
         """Build causal attention mask."""
-        mask = np.triu(np.full((seq_len, seq_len), -np.inf), k=1)
+        # Use large negative number instead of -inf for numerical stability
+        mask = np.triu(np.full((seq_len, seq_len), -1e4), k=1)
         return Tensor(mask, requires_grad=False)
     
     def forward(self, text: Tensor) -> Tensor:
@@ -389,7 +394,7 @@ class CLIP(Module):
     def _cross_entropy_loss(self, logits: Tensor, labels: np.ndarray) -> Tensor:
         """Compute cross entropy loss."""
         # Apply softmax
-        softmax_logits = softmax(logits, dim=-1)
+        softmax_logits = softmax(logits, axis=-1)
         
         # Compute negative log likelihood
         batch_size = logits.shape[0]

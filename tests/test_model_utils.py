@@ -1,8 +1,11 @@
 """Tests for model utilities and weight management."""
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 import pytest
 import numpy as np
-import os
 import tempfile
 from unittest.mock import patch, MagicMock
 from neural_arch.models.utils import ModelCard, download_weights, load_pretrained_weights, save_weights

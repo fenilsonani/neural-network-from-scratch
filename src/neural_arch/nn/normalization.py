@@ -18,6 +18,10 @@ class LayerNorm(Module):
         # Learnable parameters
         self.gamma = Parameter(np.ones(normalized_shape, dtype=np.float32))
         self.beta = Parameter(np.zeros(normalized_shape, dtype=np.float32))
+        
+        # Aliases for compatibility with PyTorch-style naming
+        self.weight = self.gamma
+        self.bias = self.beta
     
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass."""

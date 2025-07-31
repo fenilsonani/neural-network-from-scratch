@@ -20,6 +20,32 @@ class NumpyBackend(Backend):
     def supports_gradients(self) -> bool:
         return False  # NumPy doesn't have built-in autograd
     
+    @property 
+    def available(self) -> bool:
+        """Alias for is_available for backwards compatibility."""
+        return self.is_available
+    
+    # Dtype attributes
+    @property
+    def float32(self):
+        return np.float32
+    
+    @property
+    def float64(self):
+        return np.float64
+    
+    @property
+    def int32(self):
+        return np.int32
+    
+    @property
+    def int64(self):
+        return np.int64
+    
+    @property
+    def bool(self):
+        return np.bool_
+    
     # Array creation
     def array(self, data: Any, dtype: Optional[Any] = None) -> np.ndarray:
         return np.array(data, dtype=dtype)
@@ -52,6 +78,10 @@ class NumpyBackend(Backend):
     def reshape(self, x: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
         return x.reshape(shape)
     
+    def flatten(self, x: np.ndarray) -> np.ndarray:
+        """Flatten array to 1D."""
+        return x.flatten()
+    
     def transpose(self, x: np.ndarray, axes: Optional[Tuple[int, ...]] = None) -> np.ndarray:
         return np.transpose(x, axes)
     
@@ -70,6 +100,10 @@ class NumpyBackend(Backend):
     
     def multiply(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         return np.multiply(x, y)
+    
+    # Alias for compatibility
+    def mul(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        return self.multiply(x, y)
     
     def divide(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         return np.divide(x, y)
@@ -120,6 +154,14 @@ class NumpyBackend(Backend):
     
     def clip(self, x: np.ndarray, min_val: float, max_val: float) -> np.ndarray:
         return np.clip(x, min_val, max_val)
+    
+    def softmax(self, x: np.ndarray, axis: int = -1) -> np.ndarray:
+        """Compute softmax function."""
+        # Subtract max for numerical stability
+        x_max = np.max(x, axis=axis, keepdims=True)
+        x_shifted = x - x_max
+        exp_x = np.exp(x_shifted)
+        return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
     
     # Comparison operations
     def equal(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:

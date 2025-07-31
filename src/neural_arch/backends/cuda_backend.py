@@ -40,6 +40,27 @@ class CudaBackend(Backend):
     def supports_gradients(self) -> bool:
         return False  # CuPy doesn't have built-in autograd
     
+    # Dtype attributes
+    @property
+    def float32(self):
+        return cp.float32
+    
+    @property
+    def float64(self):
+        return cp.float64
+    
+    @property
+    def int32(self):
+        return cp.int32
+    
+    @property
+    def int64(self):
+        return cp.int64
+    
+    @property
+    def bool(self):
+        return cp.bool_
+    
     # Array creation
     def array(self, data: Any, dtype: Optional[Any] = None) -> Any:
         return cp.array(data, dtype=dtype)

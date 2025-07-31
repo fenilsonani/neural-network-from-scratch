@@ -183,7 +183,11 @@ class GPT2Attention(Module):
     def _attn(self, query: Tensor, key: Tensor, value: Tensor, attention_mask: Optional[Tensor] = None) -> Tensor:
         """Compute attention scores and apply to values."""
         # Compute attention scores
-        attn_weights = query.data @ key.data.transpose(-1, -2)
+        # query: (bsz, num_heads, seq_len, head_dim)
+        # key: (bsz, num_heads, seq_len, head_dim)
+        # Need to transpose key to (bsz, num_heads, head_dim, seq_len) for matmul
+        key_transposed = np.transpose(key.data, (0, 1, 3, 2))
+        attn_weights = query.data @ key_transposed
         
         if self.scale_attn_weights:
             attn_weights = attn_weights / np.sqrt(self.head_dim)
@@ -198,7 +202,7 @@ class GPT2Attention(Module):
             attn_weights = attn_weights + attention_mask.data
         
         # Softmax
-        attn_weights = softmax(Tensor(attn_weights, requires_grad=query.requires_grad), dim=-1)
+        attn_weights = softmax(Tensor(attn_weights, requires_grad=query.requires_grad), axis=-1)
         
         # Dropout
         attn_weights = self.attn_dropout(attn_weights)
@@ -425,7 +429,13 @@ class GPT2LMHead(Module):
     
     def tie_weights(self):
         """Tie the language modeling head weights to the token embeddings."""
-        self.lm_head.weight = self.transformer.wte.weight
+        # Transpose the embedding weights to match Linear layer expectation
+        # Embedding: (vocab_size, embed_dim) -> Linear: (embed_dim, vocab_size)
+        transposed_weight = Parameter(
+            self.transformer.wte.weight.data.T,
+            name="lm_head.weight"
+        )
+        self.lm_head.weight = transposed_weight
     
     def forward(
         self,
