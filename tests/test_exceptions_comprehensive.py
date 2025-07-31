@@ -1,4 +1,4 @@
-"""Comprehensive tests for exception handling module to boost coverage."""
+"""Comprehensive tests for exceptions module to maximize coverage."""
 
 import sys
 import os
@@ -6,430 +6,279 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import pytest
 import numpy as np
-from neural_arch.core.tensor import Tensor
-from neural_arch.core.device import Device, DeviceType
-from neural_arch.core.dtype import DType
+from neural_arch.exceptions import (
+    NeuralArchError, TensorError, ShapeError, DTypeError, DeviceError,
+    GradientError, NumericalError, ModelError, LayerError, ParameterError,
+    OptimizationError, OptimizerError, ConfigurationError, ResourceError,
+    DataError, handle_exception
+)
 
 
-class TestExceptionsComprehensive:
-    """Comprehensive tests for all exception classes to boost coverage."""
+class TestNeuralArchError:
+    """Test the base NeuralArchError class comprehensively."""
     
-    def test_tensor_error_exceptions(self):
-        """Test tensor-related exceptions comprehensively."""
-        from neural_arch.exceptions import TensorError, ShapeError, DTypeError, DeviceError
+    def test_basic_error_creation(self):
+        """Test basic error creation and attributes."""
+        error = NeuralArchError("Test message")
         
-        # Test TensorError base exception
-        try:
-            raise TensorError("Test tensor error")
-        except TensorError as e:
-            assert "Test tensor error" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test ShapeError
-        try:
-            raise ShapeError("Shape mismatch: expected (2, 3), got (3, 2)")
-        except ShapeError as e:
-            assert "Shape mismatch" in str(e)
-            assert isinstance(e, TensorError)
-        
-        # Test DTypeError
-        try:
-            raise DTypeError("Incompatible dtype: float32 vs int32")
-        except DTypeError as e:
-            assert "dtype" in str(e).lower()
-            assert isinstance(e, TensorError)
-        
-        # Test DeviceError
-        try:
-            raise DeviceError("Device mismatch: cuda vs cpu")
-        except DeviceError as e:
-            assert "Device" in str(e)
-            assert isinstance(e, TensorError)
+        assert str(error) == "[NEURALARCHERROR] Test message"
+        assert error.message == "Test message"
+        assert error.error_code == "NEURALARCHERROR"
+        assert error.context == {}
+        assert error.suggestions == []
+        assert error.original_exception is None
+        assert error.stack_trace is not None
     
-    def test_backend_exceptions(self):
-        """Test backend-related exceptions comprehensively."""
-        from neural_arch.exceptions import ResourceError, ConfigurationError
+    def test_full_error_creation(self):
+        """Test error creation with all parameters."""
+        original_exc = ValueError("Original error")
+        context = {"key": "value", "number": 42}
+        suggestions = ["Try this", "Or that"]
         
-        # Test ResourceError (covers backend unavailability)
-        try:
-            raise ResourceError("Backend operation failed", resource_type="backend")
-        except ResourceError as e:
-            assert "Backend" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test ConfigurationError (covers backend initialization)
-        try:
-            raise ConfigurationError("Failed to initialize MPS backend", config_key="backend")
-        except ConfigurationError as e:
-            assert "initialize" in str(e).lower()
-            assert isinstance(e, Exception)
-    
-    def test_gradient_exceptions(self):
-        """Test gradient-related exceptions comprehensively."""
-        from neural_arch.exceptions import GradientError
-        
-        # Test GradientError base exception
-        try:
-            raise GradientError("Gradient computation failed")
-        except GradientError as e:
-            assert "Gradient" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test GradientError with context
-        try:
-            raise GradientError("Cannot compute gradients: tensor doesn't require grad", tensor_name="input_tensor")
-        except GradientError as e:
-            assert "grad" in str(e).lower()
-            assert isinstance(e, GradientError)
-        
-        # Test GradientError with operation context
-        try:
-            raise GradientError("Backward pass failed: invalid gradient shape", operation="backward")
-        except GradientError as e:
-            assert "Backward" in str(e)
-            assert isinstance(e, GradientError)
-    
-    def test_optimization_exceptions(self):
-        """Test optimization-related exceptions comprehensively."""
-        from neural_arch.exceptions import OptimizationError, OptimizerError
-        
-        # Test OptimizationError base exception
-        try:
-            raise OptimizationError("Optimization process failed")
-        except OptimizationError as e:
-            assert "Optimization" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test OptimizerError
-        try:
-            raise OptimizerError("Invalid learning rate: must be positive", learning_rate=-0.01)
-        except OptimizerError as e:
-            assert "learning rate" in str(e).lower() or "Optimizer" in str(e)
-            assert isinstance(e, OptimizationError)
-        
-        # Test convergence as general optimization error
-        try:
-            raise OptimizationError("Training failed to converge after 1000 epochs")
-        except OptimizationError as e:
-            assert "converge" in str(e).lower()
-            assert isinstance(e, OptimizationError)
-    
-    def test_neural_network_exceptions(self):
-        """Test neural network related exceptions comprehensively."""
-        from neural_arch.exceptions import ModelError, LayerError, ParameterError
-        
-        # Test ModelError base exception
-        try:
-            raise ModelError("Neural network configuration error")
-        except ModelError as e:
-            assert "network" in str(e).lower() or "configuration" in str(e).lower()
-            assert isinstance(e, Exception)
-        
-        # Test LayerError
-        try:
-            raise LayerError("Invalid layer configuration: input size mismatch", layer_name="linear1")
-        except LayerError as e:
-            assert "layer" in str(e).lower()
-            assert isinstance(e, ModelError)
-        
-        # Test ParameterError
-        try:
-            raise ParameterError("Invalid parameter shape", parameter_name="weight")
-        except ParameterError as e:
-            assert "parameter" in str(e).lower()
-            assert isinstance(e, ModelError)
-    
-    def test_configuration_exceptions(self):
-        """Test configuration-related exceptions comprehensively."""
-        from neural_arch.exceptions import ConfigurationError, DataError
-        
-        # Test ConfigurationError base exception
-        try:
-            raise ConfigurationError("Invalid configuration settings", config_key="device")
-        except ConfigurationError as e:
-            assert "configuration" in str(e).lower()
-            assert isinstance(e, Exception)
-        
-        # Test DataError (covers validation issues)
-        try:
-            raise DataError("Config validation failed: invalid device type", data_type="config")
-        except DataError as e:
-            assert "validation" in str(e).lower() or "invalid" in str(e).lower()
-            assert isinstance(e, Exception)
-        
-        # Test compatibility as configuration error
-        try:
-            raise ConfigurationError("Version compatibility issue: requires Python 3.8+", config_key="python_version")
-        except ConfigurationError as e:
-            assert "compatibility" in str(e).lower()
-            assert isinstance(e, ConfigurationError)
-    
-    def test_memory_exceptions(self):
-        """Test memory-related exceptions comprehensively."""
-        from neural_arch.exceptions import ResourceError
-        
-        # Test ResourceError for memory issues
-        try:
-            raise ResourceError("Memory operation failed", resource_type="memory")
-        except ResourceError as e:
-            assert "Memory" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test ResourceError for out of memory
-        try:
-            raise ResourceError("GPU out of memory: cannot allocate 2GB tensor", resource_type="gpu_memory", required_amount="2GB")
-        except ResourceError as e:
-            assert "memory" in str(e).lower()
-            assert isinstance(e, ResourceError)
-        
-        # Test ResourceError for allocation failure
-        try:
-            raise ResourceError("Failed to allocate tensor on device", resource_type="device_memory")
-        except ResourceError as e:
-            assert "allocate" in str(e).lower()
-            assert isinstance(e, ResourceError)
-    
-    def test_io_exceptions(self):
-        """Test I/O related exceptions comprehensively."""
-        from neural_arch.exceptions import DataError, ResourceError
-        
-        # Test DataError for file operations
-        try:
-            raise DataError("File operation failed", data_type="model_file")
-        except DataError as e:
-            assert "operation failed" in str(e).lower() or "File" in str(e)
-            assert isinstance(e, Exception)
-        
-        # Test DataError for model loading
-        try:
-            raise DataError("Failed to load model from checkpoint.pth", data_type="checkpoint", expected_format="pytorch")
-        except DataError as e:
-            assert "load" in str(e).lower()
-            assert isinstance(e, DataError)
-        
-        # Test ResourceError for model saving
-        try:
-            raise ResourceError("Failed to save model: insufficient disk space", resource_type="disk_space")
-        except ResourceError as e:
-            assert "save" in str(e).lower()
-            assert isinstance(e, ResourceError)
-    
-    def test_exception_with_context(self):
-        """Test exceptions with additional context information."""
-        from neural_arch.exceptions import ShapeError
-        
-        # Test exception with detailed context
-        try:
-            tensor_shape = (2, 3, 4)
-            expected_shape = (3, 4, 5)
-            raise ShapeError(
-                f"Shape mismatch in matrix multiplication: "
-                f"got {tensor_shape}, expected {expected_shape}",
-                expected_shape=expected_shape,
-                actual_shape=tensor_shape,
-                operation="matrix_multiplication"
-            )
-        except ShapeError as e:
-            assert str(tensor_shape) in str(e)
-            assert str(expected_shape) in str(e)
-            assert "matrix multiplication" in str(e)
-    
-    def test_exception_chaining(self):
-        """Test exception chaining and cause tracking."""
-        from neural_arch.exceptions import ResourceError
-        
-        # Test exception chaining
-        try:
-            try:
-                raise RuntimeError("CUDA driver not found")
-            except RuntimeError as original_error:
-                raise ResourceError("CUDA backend unavailable", resource_type="cuda_backend") from original_error
-        except ResourceError as e:
-            assert e.__cause__ is not None
-            assert isinstance(e.__cause__, RuntimeError)
-            assert "CUDA driver not found" in str(e.__cause__)
-    
-    def test_exception_inheritance_hierarchy(self):
-        """Test exception inheritance hierarchy."""
-        from neural_arch.exceptions import (
-            TensorError, ShapeError, DTypeError, DeviceError,
-            GradientError, ModelError, LayerError, ParameterError,
-            OptimizationError, OptimizerError, ConfigurationError,
-            ResourceError, DataError, NeuralArchError
+        error = NeuralArchError(
+            "Complex error",
+            error_code="CUSTOM_ERROR",
+            context=context,
+            suggestions=suggestions,
+            original_exception=original_exc
         )
         
-        # Test inheritance relationships
-        assert issubclass(ShapeError, TensorError)
-        assert issubclass(DTypeError, TensorError)
-        assert issubclass(DeviceError, TensorError)
-        assert issubclass(GradientError, TensorError)
-        assert issubclass(LayerError, ModelError)
-        assert issubclass(ParameterError, ModelError)
-        assert issubclass(OptimizerError, OptimizationError)
-        
-        # Test that all are ultimately NeuralArchError subclasses
-        for exc_class in [TensorError, GradientError, ModelError, OptimizationError, ConfigurationError, ResourceError, DataError]:
-            assert issubclass(exc_class, NeuralArchError)
-            assert issubclass(exc_class, Exception)
+        assert error.message == "Complex error"
+        assert error.error_code == "CUSTOM_ERROR"
+        assert error.context == context
+        assert error.suggestions == suggestions
+        assert error.original_exception == original_exc
     
-    def test_real_world_exception_scenarios(self):
-        """Test real-world scenarios that trigger exceptions."""
-        from neural_arch.exceptions import ShapeError, DTypeError, DeviceError
+    def test_error_string_formatting(self):
+        """Test comprehensive error string formatting."""
+        original_exc = RuntimeError("Runtime issue")
+        error = NeuralArchError(
+            "Main error",
+            context={"operation": "test", "value": 123},
+            suggestions=["Fix the operation", "Check the value"],
+            original_exception=original_exc
+        )
         
-        # Test scenarios that would realistically trigger these exceptions
-        
-        # Shape mismatch in tensor operations
-        try:
-            a = Tensor([[1, 2, 3]])  # (1, 3)
-            b = Tensor([[1, 2]])     # (1, 2)
-            # This should trigger ShapeError in real operations
-            if a.shape[1] != b.shape[1]:
-                raise ShapeError(
-                    f"Cannot perform operation: tensor shapes {a.shape} and {b.shape} are incompatible",
-                    expected_shape=a.shape,
-                    actual_shape=b.shape
-                )
-        except ShapeError as e:
-            assert "incompatible" in str(e)
-            assert str(a.shape) in str(e)
-            assert str(b.shape) in str(e)
-        
-        # Dtype mismatch
-        try:
-            float_tensor = Tensor([1.5, 2.5], dtype=DType.FLOAT32)
-            int_tensor = Tensor([1, 2], dtype=DType.INT32)
-            # This should trigger DTypeError in real operations
-            if float_tensor.dtype != int_tensor.dtype:
-                raise DTypeError(
-                    f"Cannot perform operation between {float_tensor.dtype} and {int_tensor.dtype}"
-                )
-        except DTypeError as e:
-            assert "float32" in str(e) or "int32" in str(e)
-        
-        # Device mismatch
-        try:
-            cpu_tensor = Tensor([1, 2, 3], device=Device.cpu())
-            # Simulate device mismatch
-            target_device = "cuda:0"
-            if cpu_tensor.device.type != DeviceType.CUDA:
-                raise DeviceError(
-                    f"Tensor is on {cpu_tensor.device.type.value} but operation requires {target_device}"
-                )
-        except DeviceError as e:
-            assert "cpu" in str(e) and "cuda" in str(e)
-    
-    def test_exception_custom_attributes(self):
-        """Test exceptions with custom attributes."""
-        from neural_arch.exceptions import TensorError, ResourceError
-        
-        # Test exception with custom error codes
-        try:
-            error = TensorError("Custom tensor error")
-            error.custom_attribute = "TENSOR_001"
-            error.tensor_shape = (2, 3, 4)
-            raise error
-        except TensorError as e:
-            if hasattr(e, 'custom_attribute'):
-                assert e.custom_attribute == "TENSOR_001"
-            if hasattr(e, 'tensor_shape'):
-                assert e.tensor_shape == (2, 3, 4)
-    
-    def test_exception_formatting_and_repr(self):
-        """Test exception string formatting and representation."""
-        from neural_arch.exceptions import ShapeError, ResourceError
-        
-        # Test string representation
-        error = ShapeError("Test error message")
         error_str = str(error)
-        error_repr = repr(error)
-        
-        assert "Test error message" in error_str
-        assert "ShapeError" in error_repr
-        assert len(error_str) > 0
-        assert len(error_repr) > 0
-        
-        # Test with empty message
-        empty_error = ResourceError("")
-        empty_str = str(empty_error)
-        assert "ResourceError" in repr(empty_error)
+        assert "[NEURALARCHERROR] Main error" in error_str
+        assert "Context: {'operation': 'test', 'value': 123}" in error_str
+        assert "Suggestions:" in error_str
+        assert "  - Fix the operation" in error_str
+        assert "  - Check the value" in error_str
+        assert "Caused by: Runtime issue" in error_str
     
-    def test_exception_equality(self):
-        """Test exception equality comparison."""
-        from neural_arch.exceptions import TensorError, ShapeError
+    def test_to_dict_method(self):
+        """Test error serialization to dictionary."""
+        original_exc = KeyError("Missing key")
+        error = NeuralArchError(
+            "Dict test",
+            error_code="DICT_ERROR",
+            context={"test": True},
+            suggestions=["Add the key"],
+            original_exception=original_exc
+        )
         
-        # Test exception equality
-        error1 = TensorError("Same message")
-        error2 = TensorError("Same message")
-        error3 = TensorError("Different message")
+        error_dict = error.to_dict()
+        expected = {
+            "error_type": "NeuralArchError",
+            "error_code": "DICT_ERROR",
+            "message": "Dict test",
+            "context": {"test": True},
+            "suggestions": ["Add the key"],
+            "original_exception": "'Missing key'"  # String representation includes quotes
+        }
         
-        # Same type and message might be equal (implementation dependent)
-        if hasattr(error1, '__eq__'):
-            # Test equality if implemented
-            pass
-        
-        # Different types should not be equal
-        tensor_error = TensorError("Test")
-        shape_error = ShapeError("Test")
-        assert type(tensor_error) != type(shape_error)
+        assert error_dict == expected
     
-    def test_exception_pickling_if_supported(self):
-        """Test exception serialization if supported."""
-        import pickle
-        from neural_arch.exceptions import TensorError
+    def test_to_dict_without_original_exception(self):
+        """Test to_dict method without original exception."""
+        error = NeuralArchError("Simple error")
+        error_dict = error.to_dict()
         
-        try:
-            error = TensorError("Test error for pickling")
-            # Try to pickle and unpickle the exception
-            pickled = pickle.dumps(error)
-            unpickled = pickle.loads(pickled)
-            
-            assert type(unpickled) == type(error)
-            assert str(unpickled) == str(error)
-        except (TypeError, AttributeError):
-            # Pickling might not be supported for custom exceptions
-            pass
+        assert error_dict["original_exception"] is None
+        assert error_dict["error_type"] == "NeuralArchError"
+
+
+class TestShapeError:
+    """Test ShapeError class comprehensively."""
     
-    def test_exception_multiple_inheritance_scenarios(self):
-        """Test complex exception scenarios with multiple inheritance."""
-        from neural_arch.exceptions import TensorError, ResourceError
+    def test_basic_shape_error(self):
+        """Test basic shape error creation."""
+        error = ShapeError("Shape mismatch")
         
-        # Test creating a custom exception that inherits from multiple base exceptions
-        class CustomTensorResourceError(TensorError):
-            """Custom exception inheriting from TensorError."""
-            def __init__(self, message, resource_info=None):
-                super().__init__(message)
-                self.resource_info = resource_info
-        
-        try:
-            raise CustomTensorResourceError("Combined tensor and resource error", resource_info="gpu_memory")
-        except TensorError as e:
-            assert isinstance(e, CustomTensorResourceError)
-            assert isinstance(e, TensorError)
-            if hasattr(e, 'resource_info'):
-                assert e.resource_info == "gpu_memory"
+        assert isinstance(error, TensorError)
+        assert isinstance(error, NeuralArchError)
+        assert error.error_code == "SHAPE_MISMATCH"
+        assert "Check tensor dimensions" in error.suggestions[0]
     
-    def test_exception_context_managers(self):
-        """Test exceptions within context managers."""
-        from neural_arch.exceptions import TensorError
+    def test_shape_error_with_details(self):
+        """Test shape error with shape details."""
+        error = ShapeError(
+            "Matrix multiplication error",
+            expected_shape=(4, 3),
+            actual_shape=(4, 5),
+            operation="matmul"
+        )
         
-        # Test exception handling within context managers
-        class ErrorContext:
-            def __enter__(self):
-                return self
-            
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                if exc_type is TensorError:
-                    # Handle TensorError specifically
-                    return True  # Suppress the exception
-                return False  # Let other exceptions propagate
+        assert error.context["expected_shape"] == (4, 3)
+        assert error.context["actual_shape"] == (4, 5)
+        assert error.context["operation"] == "matmul"
+        assert "reshape()" in str(error)
+        assert "broadcasting" in str(error)
+
+
+class TestDTypeError:
+    """Test DTypeError class comprehensively."""
+    
+    def test_basic_dtype_error(self):
+        """Test basic dtype error creation."""
+        error = DTypeError("Data type mismatch")
         
-        # Test suppressed exception
-        with ErrorContext():
-            raise TensorError("This should be suppressed")
+        assert isinstance(error, TensorError)
+        assert error.error_code == "DTYPE_MISMATCH"
+        assert "tensor.to(dtype)" in str(error)
+    
+    def test_dtype_error_with_details(self):
+        """Test dtype error with type details."""
+        error = DTypeError(
+            "Cannot convert types",
+            expected_dtype="float32",
+            actual_dtype="int64"
+        )
         
-        # Test non-suppressed exception
-        try:
-            with ErrorContext():
-                raise ValueError("This should not be suppressed")
-        except ValueError:
-            pass  # Expected to propagate
+        assert error.context["expected_dtype"] == "float32"
+        assert error.context["actual_dtype"] == "int64"
+        assert "type promotion" in str(error)
+
+
+class TestDeviceError:
+    """Test DeviceError class comprehensively."""
+    
+    def test_basic_device_error(self):
+        """Test basic device error creation."""
+        error = DeviceError("Device mismatch")
+        
+        assert isinstance(error, TensorError)
+        assert error.error_code == "DEVICE_MISMATCH"
+        assert "tensor.to(device)" in str(error)
+    
+    def test_device_error_with_details(self):
+        """Test device error with device details."""
+        error = DeviceError(
+            "Tensors on different devices",
+            expected_device="cuda:0",
+            actual_device="cpu"
+        )
+        
+        assert error.context["expected_device"] == "cuda:0"
+        assert error.context["actual_device"] == "cpu"
+        assert "get_default_device" in str(error)
+
+
+class TestHandleExceptionDecorator:
+    """Test the handle_exception decorator comprehensively."""
+    
+    def test_successful_function_execution(self):
+        """Test decorator doesn't interfere with successful execution."""
+        @handle_exception
+        def successful_function(x, y):
+            return x + y
+        
+        result = successful_function(5, 3)
+        assert result == 8
+    
+    def test_value_error_with_shape(self):
+        """Test ValueError with 'shape' keyword gets converted to ShapeError."""
+        @handle_exception
+        def shape_error_function():
+            raise ValueError("Shape mismatch: (3, 4) vs (3, 5)")
+        
+        with pytest.raises(ShapeError) as exc_info:
+            shape_error_function()
+        
+        assert "Shape error in shape_error_function" in str(exc_info.value)
+        assert exc_info.value.context["operation"] == "shape_error_function"
+    
+    def test_value_error_with_dtype(self):
+        """Test ValueError with 'dtype' keyword gets converted to DTypeError."""
+        @handle_exception
+        def dtype_error_function():
+            raise ValueError("Data type mismatch: expected float32")
+        
+        with pytest.raises(DTypeError) as exc_info:
+            dtype_error_function()
+        
+        assert "Data type error in dtype_error_function" in str(exc_info.value)
+    
+    def test_generic_value_error(self):
+        """Test generic ValueError gets converted to NumericalError."""
+        @handle_exception
+        def numerical_error_function():
+            raise ValueError("Division by zero")
+        
+        with pytest.raises(NumericalError) as exc_info:
+            numerical_error_function()
+        
+        assert "Numerical error in numerical_error_function" in str(exc_info.value)
+        assert exc_info.value.context["operation"] == "numerical_error_function"
+    
+    def test_type_error_conversion(self):
+        """Test TypeError gets converted to DTypeError."""
+        @handle_exception
+        def type_error_function():
+            raise TypeError("unsupported operand type(s)")
+        
+        with pytest.raises(DTypeError) as exc_info:
+            type_error_function()
+        
+        assert "Type error in type_error_function" in str(exc_info.value)
+    
+    def test_memory_error_conversion(self):
+        """Test MemoryError gets converted to ResourceError."""
+        @handle_exception
+        def memory_error_function():
+            raise MemoryError("Unable to allocate memory")
+        
+        with pytest.raises(ResourceError) as exc_info:
+            memory_error_function()
+        
+        assert "Memory error in memory_error_function" in str(exc_info.value)
+        assert exc_info.value.context["resource_type"] == "memory"
+    
+    def test_generic_exception_conversion(self):
+        """Test generic Exception gets converted to NeuralArchError."""
+        @handle_exception
+        def generic_error_function():
+            raise RuntimeError("Something went wrong")
+        
+        with pytest.raises(NeuralArchError) as exc_info:
+            generic_error_function()
+        
+        assert "Unexpected error in generic_error_function" in str(exc_info.value)
+        assert exc_info.value.context["function"] == "generic_error_function"
+        assert isinstance(exc_info.value.original_exception, RuntimeError)
+
+
+class TestAllErrorTypes:
+    """Test all error types for basic functionality."""
+    
+    def test_all_error_classes_creation(self):
+        """Test that all error classes can be created."""
+        error_classes = [
+            (GradientError, "Gradient failed"),
+            (NumericalError, "Numerical issue"),
+            (LayerError, "Layer failed"),
+            (ParameterError, "Parameter error"),
+            (OptimizerError, "Optimizer failed"),
+            (ConfigurationError, "Config error"),
+            (ResourceError, "Resource error"),
+            (DataError, "Data error"),
+        ]
+        
+        for error_class, message in error_classes:
+            error = error_class(message)
+            assert isinstance(error, NeuralArchError)
+            assert error.message == message
+            assert error.error_code is not None
+            assert isinstance(error.suggestions, list)
+            assert len(error.suggestions) > 0
