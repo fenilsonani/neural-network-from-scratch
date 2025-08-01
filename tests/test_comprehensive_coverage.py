@@ -67,14 +67,14 @@ class TestComprehensiveCoverage:
     def test_dtype_functionality(self):
         """Test DType functionality."""
         # Test dtype creation and properties
-        float32_dtype = DType.float32()
+        float32_dtype = DType.FLOAT32
         assert float32_dtype.numpy_dtype == np.float32
-        assert float32_dtype.is_floating_point
+        assert float32_dtype.is_floating
         assert not float32_dtype.is_integer
         
-        int32_dtype = DType.int32()
+        int32_dtype = DType.INT32
         assert int32_dtype.numpy_dtype == np.int32
-        assert not int32_dtype.is_floating_point
+        assert not int32_dtype.is_floating
         assert int32_dtype.is_integer
         
         # Test dtype string representation
@@ -86,8 +86,8 @@ class TestComprehensiveCoverage:
         assert dtype_from_np.numpy_dtype == np.float64
         
         # Test dtype equality
-        float32_1 = DType.float32()
-        float32_2 = DType.float32()
+        float32_1 = DType.FLOAT32
+        float32_2 = DType.FLOAT32
         assert float32_1 == float32_2
     
     def test_optimizer_functionality(self):

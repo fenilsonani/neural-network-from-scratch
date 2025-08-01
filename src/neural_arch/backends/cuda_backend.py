@@ -1,4 +1,4 @@
-"""NVIDIA CUDA backend using CuPy."""
+"""NVIDIA CUDA backend using CuPy with custom kernel integration."""
 
 import numpy as np
 from typing import Any, Optional, Tuple, Union, List
@@ -11,15 +11,35 @@ except ImportError:
     CUPY_AVAILABLE = False
     cp = None
 
+# Import custom CUDA kernels
+try:
+    from .cuda_kernels import get_cuda_kernel_manager, cuda_gelu, cuda_fused_linear_gelu, cuda_layernorm, cuda_flash_attention
+    CUDA_KERNELS_AVAILABLE = True
+except ImportError:
+    CUDA_KERNELS_AVAILABLE = False
+
 
 class CudaBackend(Backend):
-    """CuPy backend for NVIDIA GPU computation."""
+    """CuPy backend for NVIDIA GPU computation with custom kernel acceleration."""
     
     def __init__(self):
         if not CUPY_AVAILABLE:
             raise ImportError(
                 "CuPy is not installed. Install it with: pip install cupy-cuda11x"
             )
+        
+        # Initialize custom kernel manager if available
+        self._kernel_manager = None
+        if CUDA_KERNELS_AVAILABLE:
+            try:
+                self._kernel_manager = get_cuda_kernel_manager()
+                if self._kernel_manager.is_available():
+                    print(f"✅ Custom CUDA kernels initialized")
+                else:
+                    print(f"⚠️ Custom CUDA kernels unavailable")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize custom CUDA kernels: {e}")
+                self._kernel_manager = None
     
     @property
     def name(self) -> str:
@@ -39,6 +59,27 @@ class CudaBackend(Backend):
     @property
     def supports_gradients(self) -> bool:
         return False  # CuPy doesn't have built-in autograd
+    
+    # Dtype attributes
+    @property
+    def float32(self):
+        return cp.float32
+    
+    @property
+    def float64(self):
+        return cp.float64
+    
+    @property
+    def int32(self):
+        return cp.int32
+    
+    @property
+    def int64(self):
+        return cp.int64
+    
+    @property
+    def bool(self):
+        return cp.bool_
     
     # Array creation
     def array(self, data: Any, dtype: Optional[Any] = None) -> Any:
@@ -233,6 +274,86 @@ class CudaBackend(Backend):
         if return_counts:
             return cp.unique(x, return_counts=True)
         return cp.unique(x)
+    
+    # Custom kernel methods for ultra-high performance
+    def gelu(self, x: Any) -> Any:
+        """Ultra-fast GELU activation using custom CUDA kernel."""
+        if self._kernel_manager and self._kernel_manager.is_available():
+            try:
+                if isinstance(x, cp.ndarray):
+                    return self._kernel_manager.gelu_forward(x)
+                else:
+                    # Fallback to standard implementation
+                    pass
+            except Exception:
+                # Fallback to standard implementation
+                pass
+        
+        # Standard GELU implementation
+        sqrt_2_over_pi = cp.sqrt(2.0 / cp.pi)
+        inner = sqrt_2_over_pi * (x + 0.044715 * x**3)
+        return 0.5 * x * (1.0 + cp.tanh(inner))
+    
+    def fused_linear_gelu(self, input_gpu: Any, weight_gpu: Any, bias_gpu: Any) -> Any:
+        """Fused linear + GELU operation using custom CUDA kernel."""
+        if self._kernel_manager and self._kernel_manager.is_available():
+            try:
+                if all(isinstance(arr, cp.ndarray) for arr in [input_gpu, weight_gpu, bias_gpu]):
+                    return self._kernel_manager.fused_linear_gelu(input_gpu, weight_gpu, bias_gpu)
+            except Exception:
+                # Fallback to standard implementation
+                pass
+        
+        # Standard implementation: linear followed by GELU
+        linear_out = cp.dot(input_gpu, weight_gpu.T) + bias_gpu
+        return self.gelu(linear_out)
+    
+    def layernorm(self, input_gpu: Any, weight_gpu: Any, bias_gpu: Any, eps: float = 1e-5) -> Any:
+        """Layer normalization using custom CUDA kernel."""
+        if self._kernel_manager and self._kernel_manager.is_available():
+            try:
+                if all(isinstance(arr, cp.ndarray) for arr in [input_gpu, weight_gpu, bias_gpu]):
+                    output, _, _ = self._kernel_manager.layernorm_forward(input_gpu, weight_gpu, bias_gpu, eps)
+                    return output
+            except Exception:
+                # Fallback to standard implementation
+                pass
+        
+        # Standard layer normalization
+        mean = cp.mean(input_gpu, axis=-1, keepdims=True)
+        var = cp.var(input_gpu, axis=-1, keepdims=True)
+        normalized = (input_gpu - mean) / cp.sqrt(var + eps)
+        return normalized * weight_gpu + bias_gpu
+    
+    def flash_attention(self, q_gpu: Any, k_gpu: Any, v_gpu: Any, scale: float, block_size: int = 64) -> Any:
+        """Flash Attention for memory-efficient attention computation."""
+        if self._kernel_manager and self._kernel_manager.is_available():
+            try:
+                if all(isinstance(arr, cp.ndarray) for arr in [q_gpu, k_gpu, v_gpu]):
+                    return self._kernel_manager.flash_attention(q_gpu, k_gpu, v_gpu, scale, block_size)
+            except Exception:
+                # Fallback to standard implementation
+                pass
+        
+        # Standard attention implementation (memory-intensive)
+        # Q @ K^T
+        scores = cp.matmul(q_gpu, cp.transpose(k_gpu, (0, 1, 3, 2))) * scale
+        # Softmax
+        attention_weights = cp.exp(scores - cp.max(scores, axis=-1, keepdims=True))
+        attention_weights = attention_weights / cp.sum(attention_weights, axis=-1, keepdims=True)
+        # Attention @ V
+        return cp.matmul(attention_weights, v_gpu)
+    
+    def benchmark_kernel(self, kernel_name: str, *args, num_runs: int = 100) -> float:
+        """Benchmark a specific custom kernel."""
+        if self._kernel_manager and self._kernel_manager.is_available():
+            return self._kernel_manager.benchmark_kernel(kernel_name, *args, num_runs=num_runs)
+        return float('inf')
+    
+    @property
+    def has_custom_kernels(self) -> bool:
+        """Check if custom CUDA kernels are available."""
+        return self._kernel_manager is not None and self._kernel_manager.is_available()
 
 
 # Register the CUDA backend

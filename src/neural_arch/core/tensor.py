@@ -86,7 +86,7 @@ class Tensor:
             raise TypeError(f"requires_grad must be bool, got {type(requires_grad)}")
         
         # Core tensor properties
-        self._requires_grad = requires_grad and _grad_enabled
+        self._requires_grad = requires_grad  # Honor requires_grad regardless of global state
         self._dtype = dtype or get_default_dtype()
         self._device = device or get_default_device()
         self._name = name
@@ -112,16 +112,95 @@ class Tensor:
         logger.debug(f"Created tensor {self._name} with shape {self.shape} on {self._device} using {self._backend.name} backend")
     
     def _get_backend_for_device(self, device: Device) -> Backend:
-        """Get appropriate backend for device."""
+        """Get appropriate backend for device with performance-based selection."""
         if device.type == DeviceType.CPU:
-            return get_backend("numpy")
+            # For CPU tensors, intelligently choose between JIT and NumPy
+            return self._select_cpu_backend()
         elif device.type == DeviceType.CUDA:
             return get_backend("cuda")
         elif device.type == DeviceType.MPS:
             return get_backend("mps")
         else:
-            # Default to numpy backend
+            # Default to intelligent CPU backend selection
+            return self._select_cpu_backend()
+    
+    def _select_cpu_backend(self) -> Backend:
+        """Select the best CPU backend based on tensor size and global configuration."""
+        from ..backends.utils import auto_select_backend
+        from ..backends import available_backends
+        from ..optimization_config import get_config
+        
+        config = get_config()
+        
+        # If auto backend selection is disabled, use NumPy
+        if not config.optimization.auto_backend_selection:
             return get_backend("numpy")
+        
+        # Get tensor size estimate if data is available
+        tensor_size = 1
+        if hasattr(self, '_data') and self._data is not None:
+            if hasattr(self._data, 'size'):
+                tensor_size = self._data.size
+            elif hasattr(self._data, 'shape'):
+                tensor_size = np.prod(self._data.shape) if hasattr(self._data, 'shape') else 1
+        
+        # Use configuration-based backend selection
+        recommended_backend = config.get_effective_backend_for_size(tensor_size)
+        available = available_backends()
+        
+        # Try to use recommended backend
+        if recommended_backend == "jit" and "jit" in available and config.optimization.enable_jit:
+            try:
+                jit_backend = get_backend("jit")
+                if jit_backend.is_available:
+                    logger.debug(f"Selected JIT backend for tensor (size: {tensor_size})")
+                    return jit_backend
+            except Exception:
+                pass
+        elif recommended_backend == "cuda" and "cuda" in available:
+            try:
+                cuda_backend = get_backend("cuda")
+                if cuda_backend.is_available:
+                    logger.debug(f"Selected CUDA backend for large tensor (size: {tensor_size})")
+                    return cuda_backend
+            except Exception:
+                pass
+        
+        # Default to NumPy
+        logger.debug(f"Selected NumPy backend for tensor (size: {tensor_size})")
+        return get_backend("numpy")
+    
+    def _apply_mixed_precision_policy(self, dtype: 'DType') -> 'DType':
+        """Apply mixed precision policy based on global config and autocast context."""
+        from ..optimization_config import get_config
+        
+        try:
+            # Try to import mixed precision manager
+            from ..optimization.mixed_precision import get_mixed_precision_manager
+            
+            config = get_config()
+            
+            # Only apply mixed precision if enabled in config
+            if not config.optimization.enable_mixed_precision:
+                return dtype
+            
+            mp_manager = get_mixed_precision_manager()
+            
+            # Check if we're in autocast context
+            if mp_manager.is_autocast_enabled():
+                # Convert FP32 to FP16 for forward pass operations
+                if dtype.numpy_dtype == np.float32:
+                    from . import DType
+                    logger.debug("Converting FP32 to FP16 due to autocast context")
+                    return DType(np.float16)
+            
+        except ImportError:
+            # Mixed precision not available
+            pass
+        except Exception as e:
+            logger.debug(f"Mixed precision policy failed: {e}")
+        
+        return dtype
     
     def _calculate_memory_usage(self) -> int:
         """Calculate memory usage of tensor data."""
@@ -167,8 +246,15 @@ class Tensor:
             else:
                 raise TypeError(f"Unsupported data type: {type(data)}")
         
-        # Apply dtype conversion
+        # Apply dtype conversion with mixed precision support
         target_dtype = dtype or get_default_dtype()
+        
+        # Check if we're in autocast context and should convert to FP16
+        target_dtype = self._apply_mixed_precision_policy(target_dtype)
+        
+        if isinstance(target_dtype, type) and issubclass(target_dtype, np.number):
+            # Handle raw numpy dtypes by converting to DType
+            target_dtype = DType.from_numpy(target_dtype)
         np_array = np_array.astype(target_dtype.numpy_dtype)
         
         # Validate for NaN/Inf values
@@ -276,14 +362,19 @@ class Tensor:
             self._grad = None
             return
             
-        if not isinstance(value, np.ndarray):
-            raise TypeError(f"Expected np.ndarray or None, got {type(value)}")
+        # Handle both numpy arrays and Tensor objects
+        if isinstance(value, Tensor):
+            value_array = value.data  # Convert Tensor to numpy
+        elif isinstance(value, np.ndarray):
+            value_array = value
+        else:
+            raise TypeError(f"Expected np.ndarray, Tensor, or None, got {type(value)}")
         
-        if value.shape != self.shape:
-            raise ValueError(f"Gradient shape {value.shape} doesn't match tensor shape {self.shape}")
+        if value_array.shape != self.shape:
+            raise ValueError(f"Gradient shape {value_array.shape} doesn't match tensor shape {self.shape}")
         
         # Convert to backend array
-        backend_grad = self._backend.from_numpy(value)
+        backend_grad = self._backend.from_numpy(value_array)
         
         # Move to same device as tensor
         device_str = self._device.type.value
@@ -310,6 +401,31 @@ class Tensor:
     def backend_data(self) -> Any:
         """Get the raw backend array (for internal use)."""
         return self._data
+    
+    @property
+    def T(self) -> 'Tensor':
+        """Transpose tensor (2D only)."""
+        if len(self.shape) != 2:
+            raise ValueError(f"Transpose only supported for 2D tensors, got shape {self.shape}")
+        
+        transposed_data = self._backend.transpose(self._data)
+        result = Tensor(
+            transposed_data,
+            requires_grad=self._requires_grad,
+            dtype=self._dtype,
+            device=self._device,
+            name=f"{self._name or 'tensor'}_T"
+        )
+        
+        if self._requires_grad:
+            def backward_fn(grad_output: np.ndarray) -> None:
+                # Transpose gradient back
+                grad_input = np.transpose(grad_output)
+                self.backward(grad_input)
+            
+            result._grad_fn = GradientFunction(backward_fn, [self], "transpose")
+        
+        return result
     
     def zero_grad(self) -> None:
         """Reset gradients to None with memory cleanup."""
@@ -413,16 +529,36 @@ class Tensor:
         )
         return cloned
     
-    def to(self, device: Optional[Device] = None, dtype: Optional[DType] = None) -> 'Tensor':
+    def to(self, device: Optional[Union[Device, str]] = None, dtype: Optional[Union[DType, str]] = None) -> 'Tensor':
         """Move tensor to specified device/dtype.
         
         Args:
-            device: Target device
-            dtype: Target data type
+            device: Target device (Device object or string like 'cpu', 'cuda')
+            dtype: Target data type (DType object or string like 'float32')
             
         Returns:
             New tensor on specified device/dtype
         """
+        # Handle string device inputs
+        if isinstance(device, str):
+            from ..core.device import Device
+            device = Device.from_string(device)
+        
+        # Handle string dtype inputs
+        if isinstance(dtype, str):
+            from ..core.dtype import DType
+            dtype = getattr(DType, dtype.upper(), None)
+            if dtype is None:
+                # Try common mappings
+                dtype_map = {
+                    'float32': DType.FLOAT32,
+                    'float64': DType.FLOAT64,
+                    'int32': DType.INT32,
+                    'int64': DType.INT64,
+                    'bool': DType.BOOL
+                }
+                dtype = dtype_map.get(dtype, DType.FLOAT32)
+        
         new_device = device or self._device
         new_dtype = dtype or self._dtype
         
@@ -526,6 +662,164 @@ class Tensor:
         """Negation operator."""
         from ..functional import neg
         return neg(self)
+    
+    def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> 'Tensor':
+        """Sum elements along specified axis.
+        
+        Args:
+            axis: Axis or axes along which to sum
+            keepdims: Keep dimensions if True
+            
+        Returns:
+            Tensor with summed values
+        """
+        if axis is None:
+            # Sum all elements
+            result_data = np.sum(self._data)
+            result_shape = () if not keepdims else tuple([1] * self.ndim)
+        else:
+            result_data = np.sum(self._data, axis=axis, keepdims=keepdims)
+            result_shape = result_data.shape
+        
+        result = Tensor(
+            result_data,
+            requires_grad=self._requires_grad,
+            dtype=self._dtype,
+            device=self._device
+        )
+        
+        if self._requires_grad:
+            def backward_fn(grad_output: np.ndarray) -> None:
+                # Broadcast gradient back to original shape
+                if axis is None:
+                    # Gradient is scalar, broadcast to full shape
+                    grad_input = np.full(self.shape, grad_output)
+                else:
+                    # Expand dims if keepdims=False
+                    if not keepdims:
+                        if isinstance(axis, int):
+                            grad_output = np.expand_dims(grad_output, axis)
+                        else:
+                            for ax in sorted(axis):
+                                grad_output = np.expand_dims(grad_output, ax)
+                    
+                    # Broadcast to original shape
+                    grad_input = np.broadcast_to(grad_output, self.shape)
+                
+                # Accumulate gradients
+                if self._grad is None:
+                    self._grad = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    self._grad = self._backend.to_device(self._grad, device_str)
+                else:
+                    grad_backend = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    grad_backend = self._backend.to_device(grad_backend, device_str)
+                    self._grad = self._backend.add(self._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if self._grad_fn is not None:
+                    self._grad_fn.apply(grad_input)
+            
+            result._grad_fn = GradientFunction(backward_fn, [self], "sum")
+        
+        return result
+    
+    def reshape(self, *shape: int) -> 'Tensor':
+        """Reshape tensor to new shape.
+        
+        Args:
+            *shape: New shape dimensions
+            
+        Returns:
+            Reshaped tensor
+        """
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = tuple(shape[0])
+        
+        result_data = self._data.reshape(shape)
+        result = Tensor(
+            result_data,
+            requires_grad=self._requires_grad,
+            dtype=self._dtype,
+            device=self._device
+        )
+        
+        if self._requires_grad:
+            def backward_fn(grad_output: np.ndarray) -> None:
+                grad_input = grad_output.reshape(self.shape)
+                
+                # Accumulate gradients
+                if self._grad is None:
+                    self._grad = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    self._grad = self._backend.to_device(self._grad, device_str)
+                else:
+                    grad_backend = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    grad_backend = self._backend.to_device(grad_backend, device_str)
+                    self._grad = self._backend.add(self._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if self._grad_fn is not None:
+                    self._grad_fn.apply(grad_input)
+            
+            result._grad_fn = GradientFunction(backward_fn, [self], "reshape")
+        
+        return result
+    
+    def __getitem__(self, key) -> 'Tensor':
+        """Tensor indexing.
+        
+        Args:
+            key: Index or slice specification
+            
+        Returns:
+            Indexed tensor
+        """
+        result_data = self._data[key]
+        result = Tensor(
+            result_data,
+            requires_grad=self._requires_grad,
+            dtype=self._dtype,
+            device=self._device
+        )
+        
+        if self._requires_grad:
+            def backward_fn(grad_output: np.ndarray) -> None:
+                grad_input = np.zeros_like(self._backend.to_numpy(self._data))
+                grad_input[key] = grad_output
+                
+                # Accumulate gradients
+                if self._grad is None:
+                    self._grad = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    self._grad = self._backend.to_device(self._grad, device_str)
+                else:
+                    grad_backend = self._backend.from_numpy(grad_input)
+                    device_str = self._device.type.value
+                    if self._device.index is not None:
+                        device_str = f"{device_str}:{self._device.index}"
+                    grad_backend = self._backend.to_device(grad_backend, device_str)
+                    self._grad = self._backend.add(self._grad, grad_backend)
+                
+                # Continue backward propagation if gradient function exists
+                if self._grad_fn is not None:
+                    self._grad_fn.apply(grad_input)
+            
+            result._grad_fn = GradientFunction(backward_fn, [self], "getitem")
+        
+        return result
     
     def __repr__(self) -> str:
         """String representation of tensor."""

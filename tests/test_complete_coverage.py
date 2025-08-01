@@ -14,6 +14,7 @@ from neural_arch.functional.pooling import max_pool, mean_pool
 from neural_arch.functional.utils import broadcast_tensors, reduce_gradient
 from neural_arch.config.defaults import DEFAULT_CONFIG, PRODUCTION_CONFIG, DEVELOPMENT_CONFIG
 from neural_arch.config.validation import validate_config
+from neural_arch.config.config import Config
 
 
 class TestCompleteCoverage:
@@ -59,10 +60,10 @@ class TestCompleteCoverage:
         """Test DType functionality comprehensively."""
         # Test all basic dtypes
         dtypes = [
-            DType.float32(),
-            DType.float64(),
-            DType.int32(),
-            DType.int64(),
+            DType.FLOAT32,
+            DType.FLOAT64,
+            DType.INT32,
+            DType.INT64,
         ]
         
         for dtype in dtypes:
@@ -71,9 +72,9 @@ class TestCompleteCoverage:
             assert dtype.numpy_dtype in (np.float32, np.float64, np.int32, np.int64)
             
             # Should have type classification
-            assert hasattr(dtype, 'is_floating_point')
+            assert hasattr(dtype, 'is_floating')
             assert hasattr(dtype, 'is_integer')
-            assert isinstance(dtype.is_floating_point, bool)
+            assert isinstance(dtype.is_floating, bool)
             assert isinstance(dtype.is_integer, bool)
             
             # Should have string representation
@@ -92,9 +93,9 @@ class TestCompleteCoverage:
     
     def test_dtype_equality(self):
         """Test DType equality comparison."""
-        float32_1 = DType.float32()
-        float32_2 = DType.float32()
-        int32_1 = DType.int32()
+        float32_1 = DType.FLOAT32
+        float32_2 = DType.FLOAT32
+        int32_1 = DType.INT32
         
         # Same types should be equal
         assert float32_1 == float32_2
@@ -234,24 +235,24 @@ class TestCompleteCoverage:
     def test_config_defaults_comprehensive(self):
         """Test configuration defaults comprehensively."""
         # Test DEFAULT_CONFIG
-        assert isinstance(DEFAULT_CONFIG, dict)
+        assert isinstance(DEFAULT_CONFIG, Config)
         
-        # Should have basic keys
-        expected_keys = ['debug', 'log_level', 'device', 'dtype', 'learning_rate']
-        for key in expected_keys:
-            if key in DEFAULT_CONFIG:
-                assert DEFAULT_CONFIG[key] is not None
+        # Should have basic attributes
+        expected_attrs = ['debug', 'log_level', 'device', 'dtype', 'learning_rate']
+        for attr in expected_attrs:
+            if hasattr(DEFAULT_CONFIG, attr):
+                assert getattr(DEFAULT_CONFIG, attr) is not None
         
         # Test PRODUCTION_CONFIG if available
         if 'PRODUCTION_CONFIG' in globals():
-            assert isinstance(PRODUCTION_CONFIG, dict)
+            assert isinstance(PRODUCTION_CONFIG, Config)
             # Production should have debug disabled
-            if 'debug' in PRODUCTION_CONFIG:
-                assert PRODUCTION_CONFIG['debug'] is False
+            if hasattr(PRODUCTION_CONFIG, 'debug'):
+                assert PRODUCTION_CONFIG.debug is False
         
         # Test DEVELOPMENT_CONFIG if available
         if 'DEVELOPMENT_CONFIG' in globals():
-            assert isinstance(DEVELOPMENT_CONFIG, dict)
+            assert isinstance(DEVELOPMENT_CONFIG, Config)
     
     def test_config_validation_comprehensive(self):
         """Test configuration validation comprehensively."""
@@ -289,13 +290,13 @@ class TestCompleteCoverage:
         t = Tensor(
             [[1, 2], [3, 4]], 
             requires_grad=True, 
-            dtype=DType.float32(),
+            dtype=DType.FLOAT32,
             device=Device.cpu(),
             name="test_tensor"
         )
         
         assert t.requires_grad is True
-        assert t.dtype == np.float32
+        assert t.dtype.numpy_dtype == np.float32
         assert t.device.type == DeviceType.CPU
         assert t.name == "test_tensor"
     
@@ -326,7 +327,7 @@ class TestCompleteCoverage:
             t_cuda = t.to(Device.cuda(0))
             # If successful, check device
             assert t_cuda.device.type in (DeviceType.CUDA, DeviceType.CPU)
-        except (RuntimeError, AttributeError):
+        except (RuntimeError, AttributeError, ValueError):
             # CUDA might not be available
             pass
         

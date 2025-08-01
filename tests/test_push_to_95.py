@@ -191,19 +191,21 @@ class TestPushTo95:
         assert loss.requires_grad
         
         # MSE loss with different shapes
-        predictions = Tensor(np.random.randn(5, 3), requires_grad=True)
-        targets = Tensor(np.random.randn(5, 3))
+        mse_predictions = Tensor(np.random.randn(5, 3), requires_grad=True)
+        mse_targets = Tensor(np.random.randn(5, 3))
         
-        mse = mse_loss(predictions, targets)
+        mse = mse_loss(mse_predictions, mse_targets)
         assert mse.shape == () or mse.shape == (1,)
         assert mse.requires_grad
         
         # Test reduction modes (if supported)
         try:
-            loss_none = cross_entropy_loss(logits, targets, reduction='none')
+            # Use original classification targets for cross-entropy
+            ce_targets = Tensor([1, 3, 5, 9])  # Class indices for cross-entropy
+            loss_none = cross_entropy_loss(logits, ce_targets, reduction='none')
             assert loss_none.shape == (batch_size,)
             
-            loss_sum = cross_entropy_loss(logits, targets, reduction='sum')
+            loss_sum = cross_entropy_loss(logits, ce_targets, reduction='sum')
             assert loss_sum.shape == () or loss_sum.shape == (1,)
             
         except (TypeError, AttributeError):

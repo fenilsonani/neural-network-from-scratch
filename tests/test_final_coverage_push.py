@@ -288,19 +288,20 @@ class TestFinalCoveragePush:
     def test_reduce_gradient_comprehensive(self):
         """Test reduce_gradient comprehensively."""
         try:
-            # Test with single gradient
-            grad = Tensor([[1, 2], [3, 4]])
-            reduced = reduce_gradient(grad)
-            assert isinstance(reduced, Tensor)
+            # Test with proper reduce_gradient arguments
+            grad = np.array([[1, 2], [3, 4]])
+            target_shape = (2, 2)
+            broadcast_shape = (2, 2)
+            reduced = reduce_gradient(grad, target_shape, broadcast_shape)
+            assert isinstance(reduced, np.ndarray)
+            assert reduced.shape == target_shape
             
-            # Test with multiple gradients
-            grads = [
-                Tensor([[1, 2]]),
-                Tensor([[3, 4]]),
-                Tensor([[5, 6]])
-            ]
-            reduced = reduce_gradient(grads)
-            assert reduced is not None
+            # Test with broadcasting reduction
+            grad_broadcast = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+            target_shape = (2, 2)  
+            broadcast_shape = (2, 2, 2)
+            reduced = reduce_gradient(grad_broadcast, target_shape, broadcast_shape)
+            assert reduced.shape == target_shape
             
         except (AttributeError, ImportError):
             pytest.skip("reduce_gradient not implemented")
@@ -434,7 +435,7 @@ class TestFinalCoveragePush:
                 result = mul(tensor, 1.0001)
                 # Result might overflow/underflow, but should handle gracefully
                 
-            except (OverflowError, UnderflowError, RuntimeError):
+            except (OverflowError, ValueError, RuntimeError):
                 # Some edge cases might cause expected errors
                 pass
     
