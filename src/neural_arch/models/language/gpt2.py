@@ -430,13 +430,10 @@ class GPT2LMHead(Module):
     
     def tie_weights(self):
         """Tie the language modeling head weights to the token embeddings."""
-        # Transpose the embedding weights to match Linear layer expectation
-        # Embedding: (vocab_size, embed_dim) -> Linear: (embed_dim, vocab_size)
-        transposed_weight = Parameter(
-            self.transformer.wte.weight.data.T,
-            name="lm_head.weight"
-        )
-        self.lm_head.weight = transposed_weight
+        # Linear layer expects weights in (output_features, input_features) format
+        # Embedding: (vocab_size, embed_dim) -> we need (vocab_size, embed_dim) for lm_head
+        # Since Linear does x @ weight.T, we need weight as (vocab_size, embed_dim)
+        self.lm_head.weight = self.transformer.wte.weight
     
     def forward(
         self,
@@ -467,9 +464,27 @@ class GPT2LMHead(Module):
         )
         
         hidden_states = transformer_outputs
-        lm_logits = self.lm_head(hidden_states)
         
-        return lm_logits
+        # Reshape for linear layer: (batch_size, seq_len, hidden_size) -> (batch_size * seq_len, hidden_size)
+        batch_size, seq_len, hidden_size = hidden_states.shape
+        hidden_states_2d = Tensor(
+            hidden_states.data.reshape(-1, hidden_size),
+            requires_grad=hidden_states.requires_grad,
+            name=f"reshaped_hidden_states"
+        )
+        
+        # Apply language modeling head
+        lm_logits_2d = self.lm_head(hidden_states_2d)
+        
+        # Reshape back: (batch_size * seq_len, vocab_size) -> (batch_size, seq_len, vocab_size)
+        vocab_size = lm_logits_2d.shape[-1]
+        lm_logits = Tensor(
+            lm_logits_2d.data.reshape(batch_size, seq_len, vocab_size),
+            requires_grad=lm_logits_2d.requires_grad,
+            name=f"lm_logits"
+        )
+        
+        return {'logits': lm_logits}
 
 
 # Model configurations
