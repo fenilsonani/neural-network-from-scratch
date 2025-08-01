@@ -19,6 +19,9 @@ from ..exceptions import NumericalError
 
 logger = logging.getLogger(__name__)
 
+# Global state for tracking autocast context
+_autocast_enabled = False
+
 
 @dataclass
 class PrecisionConfig:
@@ -164,6 +167,7 @@ class AutomaticMixedPrecision:
         logger.info(f"AMP {'enabled' if enabled else 'disabled'}")
     
     def __enter__(self):
+        global _autocast_enabled
         if self.enabled:
             # Store original default dtype
             from ..core.dtype import get_default_dtype, set_default_dtype, DType
@@ -171,15 +175,18 @@ class AutomaticMixedPrecision:
             
             # Set to FP16 for forward pass
             set_default_dtype(DType.FLOAT16)
+            _autocast_enabled = True
             logger.debug("Entered AMP context - using FP16")
         
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
+        global _autocast_enabled
         if self.enabled and self._original_dtype is not None:
             # Restore original dtype
             from ..core.dtype import set_default_dtype
             set_default_dtype(self._original_dtype)
+            _autocast_enabled = False
             logger.debug("Exited AMP context - restored original dtype")
 
 
@@ -199,6 +206,11 @@ class MixedPrecisionManager:
         self._skipped_steps = 0
         
         logger.info(f"Mixed precision manager initialized: enabled={self.config.enabled}")
+    
+    def is_autocast_enabled(self) -> bool:
+        """Check if we're currently in an autocast context."""
+        global _autocast_enabled
+        return _autocast_enabled and self.config.enabled
     
     @contextmanager
     def autocast(self):
@@ -362,6 +374,12 @@ def set_mixed_precision_config(config: PrecisionConfig):
     _mp_manager = MixedPrecisionManager(config)
 
 
+def is_autocast_enabled() -> bool:
+    """Global function to check if autocast is currently enabled."""
+    global _autocast_enabled
+    return _autocast_enabled
+
+
 @contextmanager
 def autocast(enabled: bool = True):
     """Context manager for automatic mixed precision training.
@@ -374,3 +392,27 @@ def autocast(enabled: bool = True):
     manager = get_mixed_precision_manager()
     with manager.autocast():
         yield
+
+
+@contextmanager
+def mixed_precision_training(model, optimizer, enabled: bool = True):
+    """Complete mixed precision training context manager.
+    
+    Usage:
+        with mixed_precision_training(model, optimizer) as (scaler, autocast_ctx):
+            with autocast_ctx:
+                output = model(input)
+                loss = criterion(output, target)
+            
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+    """
+    if not enabled:
+        yield None, contextmanager(lambda: (yield))()
+        return
+    
+    manager = get_mixed_precision_manager()
+    scaler = manager.scaler
+    
+    yield scaler, manager.autocast()

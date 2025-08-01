@@ -44,6 +44,14 @@ from .optim import Adam, SGD, AdamW
 
 # Configuration and utilities
 from .config import Config, load_config, save_config, get_preset_config
+
+# Import optimization configuration system
+try:
+    from .optimization_config import configure, get_config as get_optimization_config, reset_config
+    _optimization_config_available = True
+except ImportError:
+    # Optimization config not available
+    _optimization_config_available = False
 from .exceptions import (
     NeuralArchError, TensorError, ShapeError, 
     DTypeError, DeviceError, GradientError
@@ -118,6 +126,10 @@ __all__ = [
     "create_text_vocab", 
     "text_to_sequences",
 ]
+
+# Add optimization config if available
+if _optimization_config_available:
+    __all__.extend(["configure", "get_optimization_config", "reset_config"])
 
 # Enterprise features configuration
 import logging

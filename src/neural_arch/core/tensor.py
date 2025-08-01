@@ -112,16 +112,95 @@ class Tensor:
         logger.debug(f"Created tensor {self._name} with shape {self.shape} on {self._device} using {self._backend.name} backend")
     
     def _get_backend_for_device(self, device: Device) -> Backend:
-        """Get appropriate backend for device."""
+        """Get appropriate backend for device with performance-based selection."""
         if device.type == DeviceType.CPU:
-            return get_backend("numpy")
+            # For CPU tensors, intelligently choose between JIT and NumPy
+            return self._select_cpu_backend()
         elif device.type == DeviceType.CUDA:
             return get_backend("cuda")
         elif device.type == DeviceType.MPS:
             return get_backend("mps")
         else:
-            # Default to numpy backend
+            # Default to intelligent CPU backend selection
+            return self._select_cpu_backend()
+    
+    def _select_cpu_backend(self) -> Backend:
+        """Select the best CPU backend based on tensor size and global configuration."""
+        from ..backends.utils import auto_select_backend
+        from ..backends import available_backends
+        from ..optimization_config import get_config
+        
+        config = get_config()
+        
+        # If auto backend selection is disabled, use NumPy
+        if not config.optimization.auto_backend_selection:
             return get_backend("numpy")
+        
+        # Get tensor size estimate if data is available
+        tensor_size = 1
+        if hasattr(self, '_data') and self._data is not None:
+            if hasattr(self._data, 'size'):
+                tensor_size = self._data.size
+            elif hasattr(self._data, 'shape'):
+                tensor_size = np.prod(self._data.shape) if hasattr(self._data, 'shape') else 1
+        
+        # Use configuration-based backend selection
+        recommended_backend = config.get_effective_backend_for_size(tensor_size)
+        available = available_backends()
+        
+        # Try to use recommended backend
+        if recommended_backend == "jit" and "jit" in available and config.optimization.enable_jit:
+            try:
+                jit_backend = get_backend("jit")
+                if jit_backend.is_available:
+                    logger.debug(f"Selected JIT backend for tensor (size: {tensor_size})")
+                    return jit_backend
+            except Exception:
+                pass
+        elif recommended_backend == "cuda" and "cuda" in available:
+            try:
+                cuda_backend = get_backend("cuda")
+                if cuda_backend.is_available:
+                    logger.debug(f"Selected CUDA backend for large tensor (size: {tensor_size})")
+                    return cuda_backend
+            except Exception:
+                pass
+        
+        # Default to NumPy
+        logger.debug(f"Selected NumPy backend for tensor (size: {tensor_size})")
+        return get_backend("numpy")
+    
+    def _apply_mixed_precision_policy(self, dtype: 'DType') -> 'DType':
+        """Apply mixed precision policy based on global config and autocast context."""
+        from ..optimization_config import get_config
+        
+        try:
+            # Try to import mixed precision manager
+            from ..optimization.mixed_precision import get_mixed_precision_manager
+            
+            config = get_config()
+            
+            # Only apply mixed precision if enabled in config
+            if not config.optimization.enable_mixed_precision:
+                return dtype
+            
+            mp_manager = get_mixed_precision_manager()
+            
+            # Check if we're in autocast context
+            if mp_manager.is_autocast_enabled():
+                # Convert FP32 to FP16 for forward pass operations
+                if dtype.numpy_dtype == np.float32:
+                    from . import DType
+                    logger.debug("Converting FP32 to FP16 due to autocast context")
+                    return DType(np.float16)
+            
+        except ImportError:
+            # Mixed precision not available
+            pass
+        except Exception as e:
+            logger.debug(f"Mixed precision policy failed: {e}")
+        
+        return dtype
     
     def _calculate_memory_usage(self) -> int:
         """Calculate memory usage of tensor data."""
@@ -167,8 +246,12 @@ class Tensor:
             else:
                 raise TypeError(f"Unsupported data type: {type(data)}")
         
-        # Apply dtype conversion
+        # Apply dtype conversion with mixed precision support
         target_dtype = dtype or get_default_dtype()
+        
+        # Check if we're in autocast context and should convert to FP16
+        target_dtype = self._apply_mixed_precision_policy(target_dtype)
+        
         if isinstance(target_dtype, type) and issubclass(target_dtype, np.number):
             # Handle raw numpy dtypes by converting to DType
             target_dtype = DType.from_numpy(target_dtype)

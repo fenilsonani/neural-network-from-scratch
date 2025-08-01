@@ -112,6 +112,44 @@ class Adam(Optimizer):
         
         logger.info(f"Initialized Adam optimizer: lr={lr}, beta1={beta1}, beta2={beta2}")
     
+    def _maybe_unscale_gradients(self):
+        """Unscale gradients if mixed precision is enabled."""
+        try:
+            from ..optimization.mixed_precision import get_mixed_precision_manager
+            mp_manager = get_mixed_precision_manager()
+            
+            # If mixed precision is enabled, unscale gradients
+            if mp_manager.config.enabled and hasattr(mp_manager.scaler, '_scale'):
+                scale = mp_manager.scaler._scale
+                for name, param in self.parameters.items():
+                    if param.grad is not None:
+                        param.grad = param.grad / scale
+                        logger.debug(f"Unscaled gradient for {name} by factor {scale}")
+        except Exception as e:
+            logger.debug(f"Could not unscale gradients: {e}")
+    
+    def step_with_mixed_precision(self, scaler=None):
+        """Optimizer step with mixed precision support."""
+        if scaler is not None:
+            # Use provided scaler
+            success = scaler.step(self)
+            if success:
+                scaler.update()
+            return success
+        else:
+            # Try automatic mixed precision
+            try:
+                from ..optimization.mixed_precision import get_mixed_precision_manager
+                mp_manager = get_mixed_precision_manager()
+                if mp_manager.config.enabled:
+                    return mp_manager.scaler.step(self)
+            except:
+                pass
+            
+            # Fallback to normal step
+            self.step()
+            return True
+    
     @handle_exception
     def step(self) -> None:
         """Perform a single optimization step.

@@ -28,15 +28,30 @@ def cross_entropy_loss(predictions: Tensor, targets: Tensor, reduction: str = 'm
     # Apply softmax to get probabilities
     probs = softmax(predictions)
     
-    # Convert targets to indices if needed
+    # Convert targets to indices if needed using backend operations
     if targets.data.ndim == 1:
-        target_indices = targets.data.astype(int)
+        # Convert backend data to numpy for indexing
+        if hasattr(targets.backend_data, 'get'):  # CuPy array
+            target_indices = targets.backend_data.get().astype(int)
+        else:
+            target_indices = targets.backend.to_numpy(targets.backend_data).astype(int) if hasattr(targets.backend, 'to_numpy') else targets.data.astype(int)
     else:
-        target_indices = np.argmax(targets.data, axis=1)
+        # Convert backend data to numpy for argmax
+        if hasattr(targets.backend_data, 'get'):  # CuPy array
+            target_data_np = targets.backend_data.get()
+        else:
+            target_data_np = targets.backend.to_numpy(targets.backend_data) if hasattr(targets.backend, 'to_numpy') else targets.data
+        target_indices = np.argmax(target_data_np, axis=1)
     
     # Extract probabilities for target classes
     batch_size = predictions.shape[0]
-    target_probs = probs.data[np.arange(batch_size), target_indices]
+    # Convert probs.data to numpy for indexing
+    if hasattr(probs.backend_data, 'get'):  # CuPy array
+        probs_data_np = probs.backend_data.get()
+    else:
+        probs_data_np = probs.backend.to_numpy(probs.backend_data) if hasattr(probs.backend, 'to_numpy') else probs.data
+    
+    target_probs = probs_data_np[np.arange(batch_size), target_indices]
     
     # Compute cross-entropy loss (add epsilon for numerical stability)
     epsilon = 1e-8
@@ -102,8 +117,19 @@ def mse_loss(predictions: Tensor, targets: Tensor, reduction: str = 'mean') -> T
     Mathematical Definition:
         loss = (predictions - targets)^2
     """
-    # Compute squared differences
-    diff = predictions.data - targets.data
+    # Compute squared differences using backend operations
+    # Convert backend data to numpy for computation
+    if hasattr(predictions.backend_data, 'get'):  # CuPy array
+        pred_data_np = predictions.backend_data.get()
+    else:
+        pred_data_np = predictions.backend.to_numpy(predictions.backend_data) if hasattr(predictions.backend, 'to_numpy') else predictions.data
+    
+    if hasattr(targets.backend_data, 'get'):  # CuPy array
+        target_data_np = targets.backend_data.get()
+    else:
+        target_data_np = targets.backend.to_numpy(targets.backend_data) if hasattr(targets.backend, 'to_numpy') else targets.data
+    
+    diff = pred_data_np - target_data_np
     loss_data = diff ** 2
     
     # Apply reduction

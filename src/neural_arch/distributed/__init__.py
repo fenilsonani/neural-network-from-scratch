@@ -62,6 +62,16 @@ from .checkpointing import (
     load_distributed_checkpoint
 )
 
+from .integration import (
+    auto_distributed_setup,
+    make_distributed,
+    distributed_training_context,
+    DistributedModelMixin,
+    auto_scale_batch_size,
+    auto_scale_learning_rate,
+    get_distributed_training_info
+)
+
 __all__ = [
     # Data parallel
     'DataParallel', 'DistributedDataParallel', 'DistributedSampler',
@@ -81,5 +91,10 @@ __all__ = [
     'DistributedLauncher', 'launch_distributed_training', 'MultiNodeLauncher',
     
     # Checkpointing
-    'DistributedCheckpoint', 'save_distributed_checkpoint', 'load_distributed_checkpoint'
+    'DistributedCheckpoint', 'save_distributed_checkpoint', 'load_distributed_checkpoint',
+    
+    # Integration helpers
+    'auto_distributed_setup', 'make_distributed', 'distributed_training_context',
+    'DistributedModelMixin', 'auto_scale_batch_size', 'auto_scale_learning_rate',
+    'get_distributed_training_info'
 ]

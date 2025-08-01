@@ -317,8 +317,10 @@ class PreNormFeedForward(Module):
             self.down_proj = Linear(config.d_ff, config.d_model, bias=False)
             self.gate_proj = None
         else:
-            # Standard FFN with single hidden layer
-            self.up_proj = Linear(config.d_model, config.d_ff, bias=True)
+            # Standard FFN with single hidden layer - enable fusion for activation
+            activation_func = config.activation.lower() if config.activation.lower() in ['gelu', 'relu'] else None
+            self.up_proj = Linear(config.d_model, config.d_ff, bias=True, 
+                                activation=activation_func, enable_fusion=True)
             self.down_proj = Linear(config.d_ff, config.d_model, bias=True)
             self.gate_proj = None
         
@@ -354,17 +356,23 @@ class PreNormFeedForward(Module):
             # Standard FFN
             hidden = self.up_proj(x)
             
-            if self.activation_type == "gelu":
-                hidden = gelu(hidden)
-            elif self.activation_type == "relu":
-                # Apply ReLU
-                hidden = Tensor(
-                    np.maximum(0, hidden.data),
-                    requires_grad=hidden.requires_grad,
-                    name=f"relu({hidden.name or 'tensor'})"
-                )
+            # Check if activation is already fused in the linear layer
+            if hasattr(self.up_proj, 'activation') and self.up_proj.activation:
+                # Activation is already applied via fusion - no need to apply again
+                pass
             else:
-                raise ModelError(f"Unknown activation: {self.activation_type}")
+                # Apply activation manually
+                if self.activation_type == "gelu":
+                    hidden = gelu(hidden)
+                elif self.activation_type == "relu":
+                    # Apply ReLU
+                    hidden = Tensor(
+                        np.maximum(0, hidden.data),
+                        requires_grad=hidden.requires_grad,
+                        name=f"relu({hidden.name or 'tensor'})"
+                    )
+                else:
+                    raise ModelError(f"Unknown activation: {self.activation_type}")
         
         # Apply dropout
         hidden = self.dropout(hidden)

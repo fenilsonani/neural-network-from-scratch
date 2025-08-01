@@ -41,7 +41,11 @@ class OptimizedLinear(Module):
         dtype: Optional[Any] = None,
         device: Optional[Any] = None,
         enable_fusion: bool = True,
-        enable_jit: bool = True
+        enable_jit: bool = True,
+        # Backward compatibility with standard Linear layer
+        weight_init: str = "he_uniform",
+        bias_init: str = "zeros",
+        name: Optional[str] = None
     ):
         """Initialize optimized linear layer.
         
@@ -61,19 +65,22 @@ class OptimizedLinear(Module):
         self.out_features = out_features
         self.has_bias = bias
         self.activation = activation
-        self.enable_fusion = enable_fusion
-        self.enable_jit = enable_jit
+        # Check global configuration for fusion and JIT settings
+        from ..optimization_config import get_config
+        config = get_config()
         
-        # Initialize parameters
-        std = np.sqrt(2.0 / in_features)  # He initialization
+        self.enable_fusion = enable_fusion and config.optimization.enable_fusion
+        self.enable_jit = enable_jit and config.optimization.enable_jit
+        
+        # Initialize parameters using specified initialization schemes
         self.weight = Parameter(
-            np.random.randn(out_features, in_features).astype(np.float32) * std,
+            self._initialize_weight(weight_init, in_features, out_features),
             name="weight"
         )
         
         if bias:
             self.bias = Parameter(
-                np.zeros(out_features, dtype=np.float32),
+                self._initialize_bias(bias_init, out_features),
                 name="bias"
             )
         else:
@@ -93,6 +100,49 @@ class OptimizedLinear(Module):
         logger.debug(f"OptimizedLinear({in_features}, {out_features}) initialized with "
                     f"fusion={'enabled' if enable_fusion else 'disabled'}, "
                     f"jit={'enabled' if self._jit_backend else 'disabled'}")
+    
+    def _initialize_weight(self, weight_init: str, in_features: int, out_features: int) -> np.ndarray:
+        """Initialize weight matrix according to specified scheme."""
+        if weight_init == "xavier_uniform":
+            # Xavier/Glorot uniform initialization
+            limit = np.sqrt(6.0 / (in_features + out_features))
+            return np.random.uniform(-limit, limit, (out_features, in_features)).astype(np.float32)
+        elif weight_init == "xavier_normal":
+            # Xavier/Glorot normal initialization
+            std = np.sqrt(2.0 / (in_features + out_features))
+            return np.random.normal(0, std, (out_features, in_features)).astype(np.float32)
+        elif weight_init == "he_uniform":
+            # He uniform initialization (good for ReLU)
+            limit = np.sqrt(6.0 / in_features)
+            return np.random.uniform(-limit, limit, (out_features, in_features)).astype(np.float32)
+        elif weight_init == "he_normal":
+            # He normal initialization (good for ReLU)
+            std = np.sqrt(2.0 / in_features)
+            return np.random.normal(0, std, (out_features, in_features)).astype(np.float32)
+        elif weight_init == "normal":
+            # Standard normal initialization
+            return np.random.normal(0, 0.01, (out_features, in_features)).astype(np.float32)
+        elif weight_init == "zeros":
+            # Zero initialization
+            return np.zeros((out_features, in_features), dtype=np.float32)
+        elif weight_init == "ones":
+            # Ones initialization
+            return np.ones((out_features, in_features), dtype=np.float32)
+        else:
+            raise ValueError(f"Unknown weight initialization: {weight_init}")
+    
+    def _initialize_bias(self, bias_init: str, out_features: int) -> np.ndarray:
+        """Initialize bias vector according to specified scheme."""
+        if bias_init == "zeros":
+            return np.zeros(out_features, dtype=np.float32)
+        elif bias_init == "ones":
+            return np.ones(out_features, dtype=np.float32)
+        elif bias_init == "normal":
+            return np.random.normal(0, 0.01, out_features).astype(np.float32)
+        elif bias_init == "uniform":
+            return np.random.uniform(-0.1, 0.1, out_features).astype(np.float32)
+        else:
+            raise ValueError(f"Unknown bias initialization: {bias_init}")
     
     def forward(self, x: Tensor) -> Tensor:
         """Optimized forward pass with automatic fusion and JIT compilation."""

@@ -23,8 +23,13 @@ def relu(x: Tensor) -> Tensor:
         f(x) = max(0, x)
         f'(x) = 1 if x > 0, else 0
     """
-    # Apply ReLU: max(0, x)
-    result_data = np.maximum(0, x.data)
+    # Apply ReLU using tensor's backend for optimization
+    if hasattr(x.backend, 'relu'):
+        # Use backend-optimized ReLU if available
+        result_data = x.backend.relu(x.backend_data)
+    else:
+        # Apply ReLU: max(0, x) using backend operations
+        result_data = x.backend.maximum(x.backend.array(0), x.backend_data)
     
     # Create result tensor
     result = Tensor(
@@ -40,7 +45,12 @@ def relu(x: Tensor) -> Tensor:
             
             Gradient is 1 where input > 0, 0 elsewhere.
             """
-            grad_input = grad_output * (x.data > 0).astype(np.float32)
+            # Convert to backend format for gradient computation
+            if hasattr(x.backend_data, 'get'):  # CuPy array
+                x_data_np = x.backend_data.get()
+            else:
+                x_data_np = x.backend.to_numpy(x.backend_data) if hasattr(x.backend, 'to_numpy') else x.data
+            grad_input = grad_output * (x_data_np > 0).astype(np.float32)
             x.backward(grad_input)
             if hasattr(x, '_backward'):
                 x._backward()
@@ -68,17 +78,34 @@ def softmax(x: Tensor, axis: int = -1) -> Tensor:
     The subtraction of max(x) ensures numerical stability by preventing
     overflow in the exponential function.
     """
-    # Numerical stability: subtract max along the specified axis
-    x_max = np.max(x.data, axis=axis, keepdims=True)
-    x_shifted = x.data - x_max
-    
-    # Compute softmax
-    exp_values = np.exp(x_shifted)
-    sum_exp = np.sum(exp_values, axis=axis, keepdims=True)
-    
-    # Avoid division by zero
-    sum_exp = np.maximum(sum_exp, 1e-8)
-    result_data = exp_values / sum_exp
+    # Check if backend has optimized softmax implementation
+    if hasattr(x.backend, 'softmax'):
+        try:
+            result_data = x.backend.softmax(x.backend_data, axis=axis)
+        except Exception:
+            # Fallback to manual implementation using backend operations
+            x_max = x.backend.max(x.backend_data, axis=axis, keepdims=True)
+            x_shifted = x.backend_data - x_max
+            
+            # Compute softmax
+            exp_values = x.backend.exp(x_shifted)
+            sum_exp = x.backend.sum(exp_values, axis=axis, keepdims=True)
+            
+            # Avoid division by zero
+            sum_exp = x.backend.maximum(sum_exp, x.backend.array(1e-8))
+            result_data = exp_values / sum_exp
+    else:
+        # Numerical stability: subtract max along the specified axis using backend
+        x_max = x.backend.max(x.backend_data, axis=axis, keepdims=True)
+        x_shifted = x.backend_data - x_max
+        
+        # Compute softmax using backend operations
+        exp_values = x.backend.exp(x_shifted)
+        sum_exp = x.backend.sum(exp_values, axis=axis, keepdims=True)
+        
+        # Avoid division by zero
+        sum_exp = x.backend.maximum(sum_exp, x.backend.array(1e-8))
+        result_data = exp_values / sum_exp
     
     # Create result tensor
     result = Tensor(
@@ -97,9 +124,15 @@ def softmax(x: Tensor, axis: int = -1) -> Tensor:
             
             This leads to: grad_input = softmax * (grad_output - sum(grad_output * softmax))
             """
+            # Convert result_data to numpy for gradient computation
+            if hasattr(result_data, 'get'):  # CuPy array
+                result_data_np = result_data.get()
+            else:
+                result_data_np = x.backend.to_numpy(result_data) if hasattr(x.backend, 'to_numpy') else result_data
+            
             # Compute the sum along the softmax axis
-            sum_term = np.sum(grad_output * result_data, axis=axis, keepdims=True)
-            grad_input = result_data * (grad_output - sum_term)
+            sum_term = np.sum(grad_output * result_data_np, axis=axis, keepdims=True)
+            grad_input = result_data_np * (grad_output - sum_term)
             
             x.backward(grad_input)
             if hasattr(x, '_backward'):
@@ -125,13 +158,24 @@ def sigmoid(x: Tensor) -> Tensor:
         σ(x) = 1 / (1 + exp(-x))
         σ'(x) = σ(x) * (1 - σ(x))
     """
-    # Numerical stability for sigmoid
-    # Use different formulations for positive and negative values
-    result_data = np.where(
-        x.data >= 0,
-        1 / (1 + np.exp(-x.data)),  # For x >= 0
-        np.exp(x.data) / (1 + np.exp(x.data))  # For x < 0
-    )
+    # Check if backend has optimized sigmoid implementation
+    if hasattr(x.backend, 'sigmoid'):
+        try:
+            result_data = x.backend.sigmoid(x.backend_data)
+        except Exception:
+            # Fallback to numerical stability implementation using backend operations
+            result_data = x.backend.where(
+                x.backend_data >= 0,
+                1 / (1 + x.backend.exp(-x.backend_data)),  # For x >= 0
+                x.backend.exp(x.backend_data) / (1 + x.backend.exp(x.backend_data))  # For x < 0
+            )
+    else:
+        # Numerical stability for sigmoid using backend operations
+        result_data = x.backend.where(
+            x.backend_data >= 0,
+            1 / (1 + x.backend.exp(-x.backend_data)),  # For x >= 0
+            x.backend.exp(x.backend_data) / (1 + x.backend.exp(x.backend_data))  # For x < 0
+        )
     
     # Create result tensor
     result = Tensor(
@@ -147,7 +191,12 @@ def sigmoid(x: Tensor) -> Tensor:
             
             Gradient is sigmoid(x) * (1 - sigmoid(x))
             """
-            grad_input = grad_output * result_data * (1 - result_data)
+            # Convert result_data to numpy for gradient computation
+            if hasattr(result_data, 'get'):  # CuPy array
+                result_data_np = result_data.get()
+            else:
+                result_data_np = x.backend.to_numpy(result_data) if hasattr(x.backend, 'to_numpy') else result_data
+            grad_input = grad_output * result_data_np * (1 - result_data_np)
             x.backward(grad_input)
             if hasattr(x, '_backward'):
                 x._backward()
@@ -172,8 +221,8 @@ def tanh(x: Tensor) -> Tensor:
         tanh(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x))
         tanh'(x) = 1 - tanh²(x)
     """
-    # Compute tanh using numpy's stable implementation
-    result_data = np.tanh(x.data)
+    # Compute tanh using backend's implementation
+    result_data = x.backend.tanh(x.backend_data)
     
     # Create result tensor
     result = Tensor(
@@ -189,7 +238,12 @@ def tanh(x: Tensor) -> Tensor:
             
             Gradient is 1 - tanh²(x)
             """
-            grad_input = grad_output * (1 - result_data ** 2)
+            # Convert result_data to numpy for gradient computation
+            if hasattr(result_data, 'get'):  # CuPy array
+                result_data_np = result_data.get()
+            else:
+                result_data_np = x.backend.to_numpy(result_data) if hasattr(x.backend, 'to_numpy') else result_data
+            grad_input = grad_output * (1 - result_data_np ** 2)
             x.backward(grad_input)
             if hasattr(x, '_backward'):
                 x._backward()
@@ -216,6 +270,82 @@ def gelu(x: Tensor, approximate: bool = False) -> Tensor:
         
     The exact implementation using error function provides 99.99% accuracy vs 99.9% for approximation.
     """
+    # Check if backend has optimized GELU implementation (e.g., CUDA kernels)
+    if hasattr(x.backend, 'gelu') and not approximate:
+        try:
+            result_data = x.backend.gelu(x.backend_data)
+            
+            # Create result tensor with backend data
+            result = Tensor(
+                result_data,
+                requires_grad=x.requires_grad,
+                name=f"gelu_optimized({x.name or 'tensor'})",
+                device=x.device
+            )
+            
+            # Set up gradient computation for optimized path
+            if x.requires_grad:
+                def backward_fn_optimized(grad_output: np.ndarray) -> None:
+                    """Backward pass for optimized GELU."""
+                    # Convert grad_output to backend format if needed
+                    backend_grad = x.backend.array(grad_output) if not hasattr(grad_output, 'backend') else grad_output
+                    
+                    # Use exact GELU derivative computation
+                    try:
+                        from scipy.special import erf
+                    except ImportError:
+                        try:
+                            from numpy import erf
+                        except ImportError:
+                            def erf(z):
+                                """Manual error function approximation."""
+                                a1, a2, a3, a4, a5 = 0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429
+                                p = 0.3275911
+                                sign = x.backend.sign(z)
+                                z = x.backend.abs(z)
+                                t = 1.0 / (1.0 + p * z)
+                                y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * x.backend.exp(-z * z)
+                                return sign * y
+                    
+                    # Compute GELU derivative using backend operations
+                    sqrt_2_inv = 1.0 / x.backend.sqrt(x.backend.array(2.0))
+                    erf_input = x.backend_data * sqrt_2_inv
+                    
+                    # Convert to numpy for erf, then back to backend
+                    if hasattr(x.backend_data, 'get'):
+                        # CuPy array
+                        np_erf_input = x.backend_data.get()
+                        erf_result = erf(np_erf_input)
+                        erf_result_backend = x.backend.array(erf_result)
+                    else:
+                        # Already numpy or compatible
+                        erf_result = erf(x.backend.to_numpy(erf_input))
+                        erf_result_backend = x.backend.array(erf_result)
+                    
+                    # GELU derivative: 0.5 * (1 + erf(x/√2)) + x * exp(-x²/2) / √(2π)
+                    grad_term1 = 0.5 * (1 + erf_result_backend)
+                    sqrt_2pi_inv = 1.0 / x.backend.sqrt(2.0 * x.backend.array(np.pi))
+                    exp_term = x.backend.exp(-0.5 * x.backend_data ** 2)
+                    grad_term2 = x.backend_data * exp_term * sqrt_2pi_inv
+                    
+                    # Combined gradient
+                    grad_backend = backend_grad * (grad_term1 + grad_term2)
+                    
+                    # Convert back to numpy for backward propagation
+                    grad_input = x.backend.to_numpy(grad_backend) if hasattr(x.backend, 'to_numpy') else grad_backend
+                    x.backward(grad_input)
+                    if hasattr(x, '_backward'):
+                        x._backward()
+                
+                result._grad_fn = GradientFunction(backward_fn_optimized, [x], "gelu_optimized")
+            
+            logger.debug(f"GELU operation (backend-optimized): {x.shape} -> {result.shape}")
+            return result
+            
+        except Exception as e:
+            # Fallback to standard implementation if backend optimization fails
+            logger.debug(f"Backend GELU optimization failed, falling back to standard: {e}")
+    
     if approximate:
         # GELU approximation using tanh (legacy mode)
         sqrt_2_over_pi = np.sqrt(2.0 / np.pi)

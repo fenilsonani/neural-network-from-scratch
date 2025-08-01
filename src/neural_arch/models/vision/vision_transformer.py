@@ -146,20 +146,15 @@ class MLP(Module):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features * 4
         
-        self.fc1 = Linear(in_features, hidden_features)
+        # Use fused linear+GELU for optimal performance
+        self.fc1 = Linear(in_features, hidden_features, activation='gelu', enable_fusion=True)
         self.fc2 = Linear(hidden_features, out_features)
         self.drop = Dropout(drop) if drop > 0 else None
     
-    def gelu(self, x: Tensor) -> Tensor:
-        """GELU activation function."""
-        # Approximation of GELU
-        x_data = x.data * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x.data + 0.044715 * x.data ** 3)))
-        return Tensor(x_data, requires_grad=x.requires_grad)
-    
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass through MLP."""
+        # GELU activation is now fused with the linear layer
         x = self.fc1(x)
-        x = self.gelu(x)
         if self.drop:
             x = self.drop(x)
         x = self.fc2(x)

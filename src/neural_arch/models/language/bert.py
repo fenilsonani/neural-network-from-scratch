@@ -275,13 +275,13 @@ class BERTIntermediate(Module):
     
     def __init__(self, config: BERTConfig):
         super().__init__()
-        self.dense = Linear(config.hidden_size, config.intermediate_size)
-        # Use proper GELU activation for better performance
-        self.intermediate_act_fn = None  # Will use gelu function directly
+        # Use fused linear+GELU for better performance
+        self.dense = Linear(config.hidden_size, config.intermediate_size, 
+                          activation='gelu', enable_fusion=True)
         
     def forward(self, hidden_states: Tensor) -> Tensor:
+        # GELU activation is now fused with the linear layer for optimal performance
         hidden_states = self.dense(hidden_states)
-        hidden_states = gelu(hidden_states)  # Use proper GELU activation
         return hidden_states
 
 
