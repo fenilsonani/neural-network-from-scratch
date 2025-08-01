@@ -1,0 +1,16 @@
+# Bandit configuration file to suppress false positives
+
+[bandit]
+# Skip tests directory
+exclude_dirs = tests,benchmarks
+
+# Skip specific files that have legitimate subprocess usage
+skip = B404,B603,B607
+
+# B404: Import of subprocess module - we need this for distributed training launcher
+# B603: subprocess call - check for execution of untrusted input (false positive for our use case) 
+# B607: Starting a process with a partial path - we use sys.executable which is safe
+
+[assert_used]
+# Allow assert statements in our codebase
+skips = B101
