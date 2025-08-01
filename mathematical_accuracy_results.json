@@ -1,0 +1,121 @@
+{
+  "gelu_accuracy": {
+    "exact_available": true,
+    "accuracy_tests": {
+      "100": {
+        "exact_max_error": 1.6991295197499312e-06,
+        "approx_max_error": 0.0004730854471232688,
+        "exact_rmse": 3.1341295102025707e-07,
+        "approx_rmse": 0.00015544207360820492,
+        "accuracy_improvement": 278.4281254750344
+      },
+      "1000": {
+        "exact_max_error": 1.8770715044524877e-06,
+        "approx_max_error": 0.0004732381356769202,
+        "exact_rmse": 3.2199532791591344e-07,
+        "approx_rmse": 0.00014453027532231757,
+        "accuracy_improvement": 252.11513496123118
+      },
+      "10000": {
+        "exact_max_error": 1.902440615708656e-06,
+        "approx_max_error": 0.00047338212141401215,
+        "exact_rmse": 3.02777242024186e-07,
+        "approx_rmse": 0.000151526232730126,
+        "accuracy_improvement": 248.8288556842433
+      }
+    },
+    "performance_tests": {
+      "100": {
+        "exact_time": 0.00044274330139160156,
+        "approx_time": 0.0008840560913085938,
+        "speedup_ratio": 1.9967689822294024
+      },
+      "1000": {
+        "exact_time": 4.029273986816406e-05,
+        "approx_time": 3.266334533691406e-05,
+        "speedup_ratio": 0.8106508875739645
+      },
+      "10000": {
+        "exact_time": 0.00021195411682128906,
+        "approx_time": 0.00015997886657714844,
+        "speedup_ratio": 0.7547806524184477
+      }
+    }
+  },
+  "activation_functions": {
+    "relu": {
+      "max_error": 1.860743161330447e-06,
+      "rmse": 2.9079140451913906e-07,
+      "accuracy_level": "low",
+      "our_time": 1.5974044799804688e-05,
+      "ref_time": 2.1457672119140625e-06,
+      "performance_ratio": 7.444444444444445
+    },
+    "sigmoid": {
+      "max_error": 7.543759261707805e-08,
+      "rmse": 1.8104761881050974e-08,
+      "accuracy_level": "low",
+      "our_time": 4.8160552978515625e-05,
+      "ref_time": 1.9073486328125e-05,
+      "performance_ratio": 2.525
+    },
+    "tanh": {
+      "max_error": 5.795675950270862e-08,
+      "rmse": 1.654418676787394e-08,
+      "accuracy_level": "low",
+      "our_time": 1.0967254638671875e-05,
+      "ref_time": 4.0531158447265625e-06,
+      "performance_ratio": 2.7058823529411766
+    },
+    "silu": {
+      "max_error": 1.860743161330447e-06,
+      "rmse": 3.0756076213336877e-07,
+      "accuracy_level": "low",
+      "our_time": 2.09808349609375e-05,
+      "ref_time": 1.1682510375976562e-05,
+      "performance_ratio": 1.7959183673469388
+    }
+  },
+  "normalization_layers": {
+    "layernorm": {
+      "mean_error": 3.7252903012374716e-08,
+      "var_error": 1.6426819182679964e-07,
+      "output_error": 3.370559142901186e-07,
+      "computation_time": 7.82012939453125e-05,
+      "mean_close_to_zero": 3.725290298461914e-08,
+      "var_close_to_one": 1.2934207916259766e-05
+    },
+    "batchnorm1d": {
+      "mean_close_to_zero": 7.450580596923828e-08,
+      "var_close_to_one": 2.288818359375e-05,
+      "computation_time": 5.888938903808594e-05,
+      "running_stats_updated": true
+    }
+  },
+  "gradient_accuracy": {
+    "gelu_exact": {
+      "max_gradient_error": 0.0014890616759710706,
+      "mean_gradient_error": 0.0004975337535158136,
+      "points_tested": 7
+    },
+    "gelu_approx": {
+      "max_gradient_error": 0.0018404488447996137,
+      "mean_gradient_error": 0.0008374130352250918,
+      "points_tested": 7
+    },
+    "relu": {
+      "max_gradient_error": 0.0013580322265625,
+      "mean_gradient_error": 0.00067901611328125,
+      "points_tested": 6
+    },
+    "sigmoid": {
+      "max_gradient_error": 0.002896830439567566,
+      "mean_gradient_error": 0.0011476363454546248,
+      "points_tested": 7
+    }
+  },
+  "numerical_stability": {
+    "very_small": {
+      "sigmoid": {
+        "stable": true,
+        "has_nan": 

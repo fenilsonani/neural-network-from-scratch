@@ -8,6 +8,7 @@ from typing import Union, Type
 class DType(Enum):
     """Supported data types for tensors."""
     
+    FLOAT16 = np.float16  # Half precision for mixed precision training
     FLOAT32 = np.float32
     FLOAT64 = np.float64
     INT32 = np.int32
@@ -22,7 +23,7 @@ class DType(Enum):
     @property
     def is_floating(self) -> bool:
         """Check if this is a floating-point data type."""
-        return self in (DType.FLOAT32, DType.FLOAT64)
+        return self in (DType.FLOAT16, DType.FLOAT32, DType.FLOAT64)
     
     @property
     def is_integer(self) -> bool:

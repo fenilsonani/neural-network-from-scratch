@@ -213,8 +213,9 @@ class CLIPTextTransformer(Module):
             np.random.randn(context_length, width).astype(np.float32) * 0.02
         )
         
-        # Transformer blocks
-        self.transformer = []
+        # Transformer blocks - use ModuleList for proper parameter registration
+        from ...nn.container import ModuleList
+        self.transformer = ModuleList()
         for _ in range(layers):
             self.transformer.append(
                 TextTransformerBlock(width, heads, dropout=dropout)

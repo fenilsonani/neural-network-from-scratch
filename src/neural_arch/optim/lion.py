@@ -1,4 +1,9 @@
-"""Adam optimizer implementation."""
+"""Lion optimizer implementation.
+
+Lion: Evolved Sign Momentum Optimizer
+Reference: "Symbolic Discovery of Optimization Algorithms" (Chen et al., 2023)
+Paper: https://arxiv.org/abs/2302.06675
+"""
 
 import numpy as np
 from typing import Dict, Optional
@@ -10,42 +15,49 @@ from ..exceptions import OptimizerError, handle_exception
 logger = logging.getLogger(__name__)
 
 
-class Adam(Optimizer):
-    """Adam: A Method for Stochastic Optimization.
+class Lion(Optimizer):
+    """Lion: Evolved Sign Momentum Optimizer.
     
-    Enterprise-grade Adam optimizer with:
-    - Momentum and RMSprop combination
-    - Bias correction for early training
-    - Gradient clipping for stability
-    - Numerical stability safeguards
-    - Weight decay support
+    Lion is a simple and memory-efficient optimizer that uses sign-based updates
+    and evolved momentum. Key features:
+    - Sign-based parameter updates for robustness
+    - Two momentum coefficients (β₁ for updates, β₂ for momentum)
+    - Memory efficient (only stores momentum buffer)
+    - Typically requires smaller learning rates than Adam
     
-    Reference: https://arxiv.org/abs/1412.6980
+    Algorithm:
+        c_t = β₁ · m_{t-1} + (1 - β₁) · g_t
+        θ_{t+1} = θ_t - η · sign(c_t) - λ · θ_t  
+        m_t = β₂ · m_{t-1} + (1 - β₂) · g_t
+    
+    Where:
+        - c_t: interpolation between momentum and gradient
+        - m_t: momentum buffer (EMA of gradients)
+        - η: learning rate, λ: weight decay
+        - β₁: momentum for update direction, β₂: momentum buffer decay
+    
+    Reference: https://arxiv.org/abs/2302.06675
     """
     
     def __init__(
         self,
         parameters,
-        lr: float = 0.001,
+        lr: float = 1e-4,
         beta1: float = 0.9,
-        beta2: float = 0.999,
-        eps: float = 1e-5,
+        beta2: float = 0.99,
         weight_decay: float = 0.0,
-        amsgrad: bool = False,
         maximize: bool = False,
         betas: Optional[tuple] = None
     ) -> None:
-        """Initialize Adam optimizer.
+        """Initialize Lion optimizer.
         
         Args:
             parameters: Dictionary or iterator of parameters to optimize
-            lr: Learning rate
-            beta1: Coefficient for computing running averages of gradient
-            beta2: Coefficient for computing running averages of squared gradient
-            eps: Term added to denominator for numerical stability
-            weight_decay: Weight decay (L2 penalty) coefficient
-            amsgrad: Whether to use AMSGrad variant
-            maximize: Maximize objective instead of minimize
+            lr: Learning rate (default: 1e-4, much smaller than Adam)
+            beta1: Coefficient for interpolation in update direction (default: 0.9)
+            beta2: Coefficient for momentum buffer decay (default: 0.99)
+            weight_decay: Weight decay (L2 penalty) coefficient (default: 0.0)
+            maximize: Maximize objective instead of minimize (default: False)
             betas: PyTorch-style tuple (beta1, beta2) - overrides individual beta params
             
         Raises:
@@ -56,14 +68,15 @@ class Adam(Optimizer):
             if len(betas) != 2:
                 raise OptimizerError(f"betas must be a tuple of length 2, got {len(betas)}")
             beta1, beta2 = betas
+            
         # Convert parameters to dictionary if it's an iterator
         if hasattr(parameters, 'items'):  # Already a dict
             param_dict = parameters
         else:  # Iterator from model.parameters()
             param_dict = {f"param_{i}": param for i, param in enumerate(parameters)}
         
-        super().__init__(param_dict, lr=lr, beta1=beta1, beta2=beta2, eps=eps, 
-                        weight_decay=weight_decay, amsgrad=amsgrad, maximize=maximize)
+        super().__init__(param_dict, lr=lr, beta1=beta1, beta2=beta2, 
+                        weight_decay=weight_decay, maximize=maximize)
         
         # Validate hyperparameters
         if not 0.0 <= lr:
@@ -72,49 +85,44 @@ class Adam(Optimizer):
             raise OptimizerError(f"Invalid beta1: {beta1}")
         if not 0.0 <= beta2 < 1.0:
             raise OptimizerError(f"Invalid beta2: {beta2}")
-        if not 0.0 <= eps:
-            raise OptimizerError(f"Invalid epsilon: {eps}")
         if not 0.0 <= weight_decay:
             raise OptimizerError(f"Invalid weight decay: {weight_decay}")
         
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
-        self.eps = eps
         self.weight_decay = weight_decay
-        self.amsgrad = amsgrad
         self.maximize = maximize
         
         # Initialize state for each parameter
         self.state = {}
-        self.step_count = 0  # Global step counter expected by tests
+        self.step_count = 0  # Global step counter
         
-        # Test-expected attributes
-        self.m = {}  # First moment (momentum)
-        self.v = {}  # Second moment (velocity)
+        # Initialize momentum buffers
+        self.momentum = {}  # Store momentum buffers for compatibility
         
         for name, param in self.parameters.items():
-            exp_avg = np.zeros_like(param.data, dtype=np.float64)
-            exp_avg_sq = np.zeros_like(param.data, dtype=np.float64)
+            # Initialize momentum buffer with zeros
+            momentum_buffer = np.zeros_like(param.data, dtype=np.float64)
             
             self.state[name] = {
                 'step': 0,
-                'exp_avg': exp_avg,        # First moment estimate
-                'exp_avg_sq': exp_avg_sq,  # Second moment estimate
+                'momentum_buffer': momentum_buffer,
             }
             
-            # Test-expected attributes
-            self.m[name] = exp_avg
-            self.v[name] = exp_avg_sq
-            
-            if amsgrad:
-                self.state[name]['max_exp_avg_sq'] = np.zeros_like(param.data)
+            # For compatibility with tests that might expect this
+            self.momentum[name] = momentum_buffer
         
-        logger.info(f"Initialized Adam optimizer: lr={lr}, beta1={beta1}, beta2={beta2}")
+        logger.info(f"Initialized Lion optimizer: lr={lr}, beta1={beta1}, beta2={beta2}")
     
     @handle_exception
     def step(self) -> None:
-        """Perform a single optimization step.
+        """Perform a single Lion optimization step.
+        
+        Implements the Lion algorithm:
+        1. Compute interpolation: c_t = β₁ · m_{t-1} + (1 - β₁) · g_t
+        2. Update parameters: θ_{t+1} = θ_t - η · sign(c_t) - λ · θ_t
+        3. Update momentum: m_t = β₂ · m_{t-1} + (1 - β₂) · g_t
         
         Raises:
             OptimizerError: If optimization step fails
@@ -129,78 +137,52 @@ class Adam(Optimizer):
             state = self.state[name]
             
             # Get gradient (negate if maximizing)
-            grad = param.grad
+            grad = param.grad.astype(np.float64)  # Use higher precision
             if self.maximize:
                 grad = -grad
             
-            # Apply weight decay
-            if self.weight_decay != 0:
-                grad = grad + self.weight_decay * param.data
-            
-            # Get state variables
-            exp_avg = state['exp_avg']
-            exp_avg_sq = state['exp_avg_sq']
+            # Get momentum buffer
+            momentum_buffer = state['momentum_buffer']
             
             # Update step count
             state['step'] += 1
-            step = state['step']
             
-            # Exponential moving average of gradient values (use higher precision)
-            exp_avg = self.beta1 * exp_avg + (1 - self.beta1) * grad.astype(np.float64)
+            # Step 1: Compute interpolation for update direction
+            # c_t = β₁ · m_{t-1} + (1 - β₁) · g_t
+            c_t = self.beta1 * momentum_buffer + (1 - self.beta1) * grad
             
-            # Exponential moving average of squared gradient values (use higher precision)
-            exp_avg_sq = self.beta2 * exp_avg_sq + (1 - self.beta2) * (grad.astype(np.float64) ** 2)
+            # Step 2: Compute parameter update using sign of interpolation
+            # θ_{t+1} = θ_t - η · sign(c_t) - λ · θ_t
+            update = self.lr * np.sign(c_t)
             
-            # Update state (important for next iteration)
-            state['exp_avg'] = exp_avg
-            state['exp_avg_sq'] = exp_avg_sq
+            # Apply weight decay directly to parameters (L2 regularization)
+            if self.weight_decay != 0:
+                update += self.lr * self.weight_decay * param.data.astype(np.float64)
             
-            # Update test-expected attributes
-            self.m[name] = exp_avg
-            self.v[name] = exp_avg_sq
-            
-            # Bias correction (ensure we maintain precision)
-            bias_correction1 = 1 - self.beta1 ** step
-            bias_correction2 = 1 - self.beta2 ** step
-            
-            # Apply bias correction with higher precision
-            corrected_exp_avg = exp_avg / bias_correction1
-            corrected_exp_avg_sq = exp_avg_sq / bias_correction2
-            
-            # Compute denominator with careful numerical handling
-            if self.amsgrad:
-                # AMSGrad variant: use maximum of past squared gradients
-                max_exp_avg_sq = state['max_exp_avg_sq']
-                np.maximum(max_exp_avg_sq, corrected_exp_avg_sq, out=max_exp_avg_sq)
-                denom = np.sqrt(max_exp_avg_sq) + self.eps
-            else:
-                # Add epsilon before sqrt for better numerical stability
-                denom = np.sqrt(corrected_exp_avg_sq + self.eps)
-            
-            # Apply update using standard Adam formula with adaptive boost for small LR
-            # When LR is small, give it a boost to help with convergence
-            if self.lr <= 0.02 and self.lr > 0:  # Small learning rate needs help, but not zero
-                lr_boost = min(5.0, 0.1 / self.lr)  # Boost smaller LRs more
-                effective_lr = self.lr * lr_boost
-            else:
-                effective_lr = self.lr
-            
-            update = effective_lr * corrected_exp_avg / denom
+            # Convert back to parameter dtype for update
             update = update.astype(param.data.dtype)
             
             # Apply gradient clipping for numerical stability
-            update = np.clip(update, -10.0, 10.0)
+            update = np.clip(update, -1.0, 1.0)  # Lion updates are naturally bounded by sign()
             
             # Update parameters - ensure result is numpy array with proper shape
             new_data = param.data - update
             param.data = np.asarray(new_data, dtype=param.data.dtype)
+            
+            # Step 3: Update momentum buffer
+            # m_t = β₂ · m_{t-1} + (1 - β₂) · g_t
+            momentum_buffer = self.beta2 * momentum_buffer + (1 - self.beta2) * grad
+            
+            # Update state
+            state['momentum_buffer'] = momentum_buffer
+            self.momentum[name] = momentum_buffer  # For compatibility
             
             # Check for numerical issues
             if not np.all(np.isfinite(param.data)):
                 logger.warning(f"Non-finite values detected in parameter {name}")
                 param.data = np.nan_to_num(param.data, nan=0.0, posinf=1.0, neginf=-1.0)
         
-        logger.debug("Completed Adam optimization step")
+        logger.debug("Completed Lion optimization step")
     
     @handle_exception
     def zero_grad(self) -> None:
@@ -235,9 +217,7 @@ class Adam(Optimizer):
                 'lr': self.lr,
                 'beta1': self.beta1,
                 'beta2': self.beta2,
-                'eps': self.eps,
                 'weight_decay': self.weight_decay,
-                'amsgrad': self.amsgrad,
                 'maximize': self.maximize,
             }]
         }
@@ -253,16 +233,21 @@ class Adam(Optimizer):
         self.lr = param_group['lr']
         self.beta1 = param_group['beta1']
         self.beta2 = param_group['beta2']
-        self.eps = param_group['eps']
         self.weight_decay = param_group['weight_decay']
-        self.amsgrad = param_group['amsgrad']
         self.maximize = param_group['maximize']
-        logger.info("Loaded optimizer state")
+        
+        # Rebuild momentum compatibility dict
+        self.momentum = {}
+        for name, state in self.state.items():
+            if 'momentum_buffer' in state:
+                self.momentum[name] = state['momentum_buffer']
+        
+        logger.info("Loaded Lion optimizer state")
     
     def __repr__(self) -> str:
         """String representation of the optimizer."""
-        return (f"Adam(lr={self.lr}, beta1={self.beta1}, beta2={self.beta2}, "
-                f"eps={self.eps}, weight_decay={self.weight_decay}, amsgrad={self.amsgrad})")
+        return (f"Lion(lr={self.lr}, beta1={self.beta1}, beta2={self.beta2}, "
+                f"weight_decay={self.weight_decay})")
     
     def get_statistics(self) -> Dict:
         """Get optimization statistics for monitoring.
@@ -279,10 +264,15 @@ class Adam(Optimizer):
         # Compute gradient statistics
         grad_norms = []
         param_norms = []
+        momentum_norms = []
+        
         for name, param in self.parameters.items():
             if param.grad is not None:
                 grad_norms.append(np.linalg.norm(param.grad))
             param_norms.append(np.linalg.norm(param.data))
+            
+            if name in self.state and 'momentum_buffer' in self.state[name]:
+                momentum_norms.append(np.linalg.norm(self.state[name]['momentum_buffer']))
         
         if grad_norms:
             stats.update({
@@ -296,6 +286,13 @@ class Adam(Optimizer):
                 'avg_param_norm': np.mean(param_norms),
                 'max_param_norm': np.max(param_norms),
                 'min_param_norm': np.min(param_norms),
+            })
+            
+        if momentum_norms:
+            stats.update({
+                'avg_momentum_norm': np.mean(momentum_norms),
+                'max_momentum_norm': np.max(momentum_norms),
+                'min_momentum_norm': np.min(momentum_norms),
             })
         
         return stats

@@ -284,8 +284,9 @@ class VisionTransformer(Module):
         # Stochastic depth decay rule
         dpr = np.linspace(0, drop_path_rate, depth).tolist()
         
-        # Transformer blocks
-        self.blocks = []
+        # Transformer blocks - use ModuleList for proper parameter registration
+        from ...nn.container import ModuleList
+        self.blocks = ModuleList()
         for i in range(depth):
             block = Block(
                 embed_dim, num_heads, mlp_ratio, qkv_bias,

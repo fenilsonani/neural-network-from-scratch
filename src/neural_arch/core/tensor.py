@@ -319,6 +319,31 @@ class Tensor:
         """Get the raw backend array (for internal use)."""
         return self._data
     
+    @property
+    def T(self) -> 'Tensor':
+        """Transpose tensor (2D only)."""
+        if len(self.shape) != 2:
+            raise ValueError(f"Transpose only supported for 2D tensors, got shape {self.shape}")
+        
+        transposed_data = self._backend.transpose(self._data)
+        result = Tensor(
+            transposed_data,
+            requires_grad=self._requires_grad,
+            dtype=self._dtype,
+            device=self._device,
+            name=f"{self._name or 'tensor'}_T"
+        )
+        
+        if self._requires_grad:
+            def backward_fn(grad_output: np.ndarray) -> None:
+                # Transpose gradient back
+                grad_input = np.transpose(grad_output)
+                self.backward(grad_input)
+            
+            result._grad_fn = GradientFunction(backward_fn, [self], "transpose")
+        
+        return result
+    
     def zero_grad(self) -> None:
         """Reset gradients to None with memory cleanup."""
         if self._grad is not None:

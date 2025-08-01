@@ -2,12 +2,14 @@
 
 from .linear import Linear
 from .embedding import Embedding
-from .normalization import LayerNorm, BatchNorm1d
+from .normalization import LayerNorm, BatchNorm1d, BatchNorm2d, RMSNorm, GroupNorm, InstanceNorm
 from .activation import ReLU, Softmax, Sigmoid, Tanh, GELU
 from .attention import MultiHeadAttention, SelfAttention
 from .transformer import TransformerBlock, TransformerEncoder, TransformerDecoderBlock
+from .positional import RotaryPositionalEmbedding, SinusoidalPositionalEncoding, LearnedPositionalEmbedding, RoPE, create_rope
 from .dropout import Dropout
 from .pooling import MeanPool, MaxPool
+from .container import ModuleList, Sequential
 
 __all__ = [
     # Core layers
@@ -17,6 +19,10 @@ __all__ = [
     # Normalization layers
     "LayerNorm",
     "BatchNorm1d",
+    "BatchNorm2d", 
+    "RMSNorm",
+    "GroupNorm",
+    "InstanceNorm",
     
     # Activation layers
     "ReLU",
@@ -31,8 +37,15 @@ __all__ = [
     
     # Transformer components
     "TransformerBlock",
-    "TransformerEncoder",
+    "TransformerEncoder", 
     "TransformerDecoderBlock",
+    
+    # Positional encodings
+    "RotaryPositionalEmbedding",
+    "SinusoidalPositionalEncoding",
+    "LearnedPositionalEmbedding",
+    "RoPE",
+    "create_rope",
     
     # Regularization
     "Dropout",
@@ -40,4 +53,8 @@ __all__ = [
     # Pooling layers
     "MeanPool",
     "MaxPool",
+    
+    # Container modules
+    "ModuleList",
+    "Sequential",
 ]

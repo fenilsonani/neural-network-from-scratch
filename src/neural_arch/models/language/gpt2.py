@@ -346,8 +346,9 @@ class GPT2Model(Module):
         # We don't need position embeddings since we're using RoPE
         self.drop = Dropout(config.get('embd_pdrop', 0.1))
         
-        # Transformer blocks
-        self.h = []
+        # Transformer blocks - use ModuleList for proper parameter registration
+        from ...nn.container import ModuleList
+        self.h = ModuleList()
         for i in range(config['n_layer']):
             self.h.append(GPT2Block(config, layer_idx=i))
         

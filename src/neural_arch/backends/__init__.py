@@ -48,3 +48,10 @@ try:
     __all__.append("JAXBackend")
 except ImportError:
     pass
+
+# Import JIT backend for ultra-high performance
+try:
+    from .jit_backend import JITBackend
+    __all__.append("JITBackend")
+except ImportError:
+    pass
