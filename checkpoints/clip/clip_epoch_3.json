@@ -1,0 +1,61 @@
+{
+  "epoch": 2,
+  "step": 201,
+  "config": {
+    "embed_dim": 256,
+    "image_resolution": 64,
+    "vision_layers": 6,
+    "vision_width": 256,
+    "vision_patch_size": 8,
+    "context_length": 48,
+    "vocab_size": 8000,
+    "transformer_width": 256,
+    "transformer_heads": 4,
+    "transformer_layers": 6,
+    "temperature_init": 0.07,
+    "learnable_temperature": true,
+    "batch_size": 12,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.2,
+    "num_epochs": 6,
+    "warmup_epochs": 1,
+    "max_grad_norm": 1.0,
+    "train_size": 800,
+    "val_size": 160,
+    "test_size": 80,
+    "eval_retrieval_every": 100,
+    "top_k_retrieval": [
+      1,
+      5,
+      10
+    ],
+    "enable_optimizations": true,
+    "save_checkpoints": true,
+    "checkpoint_dir": "checkpoints/clip"
+  },
+  "metrics": {
+    "train": {
+      "loss": 2.5047173998249113,
+      "image_accuracy": 0.08084577114427856,
+      "text_accuracy": 0.08830845771144276,
+      "temperature": 14.285714149475098,
+      "time": 20.642110109329224
+    },
+    "val": {
+      "loss": 2.5180878809520175,
+      "image_accuracy": 0.07142857142857142,
+      "text_accuracy": 0.08333333333333333,
+      "temperature": 14.285714149475098,
+      "time": 4.47871208190918,
+      "retrieval": {
+        "I2T_R@1": 0.0,
+        "I2T_R@5": 0.04,
+        "I2T_R@10": 0.08,
+        "T2I_R@1": 0.01,
+        "T2I_R@5": 0.05,
+        "T2I_R@10": 0.11
+      }
+    }
+  },
+  "learning_rate": 9.045084971874738e-05
+}

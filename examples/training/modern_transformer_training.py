@@ -569,9 +569,9 @@ class ModernTransformerTrainer:
             progress = (self.step - self.config.warmup_steps) / decay_steps
             lr = self.initial_lr * 0.5 * (1 + np.cos(np.pi * progress))
         
-        # Update optimizer
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = lr
+        # Update optimizer (simplified for our framework)
+        if hasattr(self.optimizer, 'lr'):
+            self.optimizer.lr = lr
         
         return lr
     

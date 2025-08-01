@@ -816,9 +816,9 @@ class CLIPTrainer:
             progress = (epoch - self.config.warmup_epochs) / (self.config.num_epochs - self.config.warmup_epochs)
             self.current_lr = self.config.learning_rate * 0.5 * (1 + np.cos(np.pi * progress))
         
-        # Update optimizer learning rate
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.current_lr
+        # Update optimizer learning rate (simplified for our framework)
+        if hasattr(self.optimizer, 'lr'):
+            self.optimizer.lr = self.current_lr
     
     def forward_pass(self, images: Tensor, texts: Tensor) -> Tuple[Tensor, Dict[str, float]]:
         """Forward pass through CLIP."""

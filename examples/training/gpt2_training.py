@@ -125,6 +125,11 @@ class SimpleTextTokenizer:
             if len(self.vocab) < self.vocab_size:
                 self.vocab[str(i)] = len(self.vocab)
         
+        # Fill remaining with dummy tokens to reach vocab_size
+        while len(self.vocab) < self.vocab_size:
+            dummy_token = f"<unused_{len(self.vocab)}>"
+            self.vocab[dummy_token] = len(self.vocab)
+        
         # Create reverse mapping
         self.id_to_token = {v: k for k, v in self.vocab.items()}
         
@@ -227,21 +232,31 @@ class TinyStoriesDataset:
             tokens = self.tokenizer.tokenize(story)
             tokens = [self.tokenizer.special_tokens['<BOS>']] + tokens + [self.tokenizer.special_tokens['<EOS>']]
             
-            # Create sequences of context length
-            for start_idx in range(0, len(tokens) - self.config.n_ctx, self.config.n_ctx // 2):
+            # Create sequences of context length with smaller stride for more data
+            stride = max(1, self.config.n_ctx // 4)  # Smaller stride for more sequences
+            for start_idx in range(0, len(tokens) - self.config.n_ctx + 1, stride):
                 sequence = tokens[start_idx:start_idx + self.config.n_ctx]
                 if len(sequence) == self.config.n_ctx:
                     self.train_sequences.append(sequence)
+                    if len(self.train_sequences) >= self.config.train_size:
+                        break
+            
+            if len(self.train_sequences) >= self.config.train_size:
+                break
         
         # Generate validation sequences
         for i in range(self.config.val_size):
-            story = f"The little child went to the magical forest and found a beautiful flower. It was very special and made them happy. The end."
+            story = f"The little child went to the magical forest and found a beautiful flower. It was very special and made them happy. The end of story {i}."
             tokens = self.tokenizer.tokenize(story)
             tokens = [self.tokenizer.special_tokens['<BOS>']] + tokens + [self.tokenizer.special_tokens['<EOS>']]
             
-            if len(tokens) >= self.config.n_ctx:
-                sequence = tokens[:self.config.n_ctx]
-                self.val_sequences.append(sequence)
+            # Pad or truncate to exact context length
+            if len(tokens) < self.config.n_ctx:
+                tokens.extend([self.tokenizer.special_tokens['<PAD>']] * (self.config.n_ctx - len(tokens)))
+            else:
+                tokens = tokens[:self.config.n_ctx]
+            
+            self.val_sequences.append(tokens)
         
         print(f"Created {len(self.train_sequences)} training sequences and {len(self.val_sequences)} validation sequences")
     
@@ -577,22 +592,22 @@ def main():
     # Training configuration
     config = GPT2TrainingConfig(
         # Model config
-        vocab_size=8000,
-        n_embd=256,
-        n_layer=4,
+        vocab_size=200,   # Much smaller vocab matching actual usage
+        n_embd=128,       # Smaller embedding for demo
+        n_layer=3,        # Fewer layers for demo
         n_head=4,
-        n_ctx=64,
+        n_ctx=32,         # Shorter context for demo
         
         # Training config
-        batch_size=8,
-        learning_rate=1e-4,
+        batch_size=4,     # Smaller batch for demo
+        learning_rate=5e-4,  # Higher learning rate
         num_epochs=3,
-        train_size=800,
-        val_size=160,
+        train_size=200,   # Much smaller dataset for demo
+        val_size=40,
         
         # Generation config
-        generate_every=50,
-        max_generate_length=30,
+        generate_every=25,
+        max_generate_length=20,
         
         # Enable optimizations
         enable_optimizations=True,

@@ -1,0 +1,45 @@
+{
+  "epoch": 3,
+  "step": 800,
+  "config": {
+    "d_model": 256,
+    "num_layers": 6,
+    "num_heads": 8,
+    "d_ff": 1024,
+    "max_seq_len": 128,
+    "vocab_size": 8000,
+    "activation": "swiglu",
+    "normalization": "rmsnorm",
+    "use_rope": true,
+    "rope_base": 10000,
+    "tie_embeddings": true,
+    "scale_embeddings": true,
+    "batch_size": 6,
+    "learning_rate": 0.0002,
+    "weight_decay": 0.1,
+    "num_epochs": 5,
+    "warmup_steps": 300,
+    "max_grad_norm": 1.0,
+    "train_size": 1200,
+    "val_size": 240,
+    "generate_every": 100,
+    "max_generate_length": 50,
+    "enable_optimizations": true,
+    "save_checkpoints": true,
+    "checkpoint_dir": "checkpoints/modern_transformer"
+  },
+  "metrics": {
+    "train": {
+      "loss": 9.004710788726806,
+      "perplexity": 8141.822033769626,
+      "accuracy": 1.3123359580052494e-05,
+      "time": 73.67074298858643
+    },
+    "val": {
+      "loss": 8.95586519241333,
+      "perplexity": 7754.02164427929,
+      "accuracy": 0.0,
+      "time": 7.716591119766235
+    }
+  }
+}

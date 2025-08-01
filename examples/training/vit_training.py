@@ -81,37 +81,51 @@ class ImageNetStyleDataset:
         self.test_data = []
         self._create_dataset()
     
+    def _set_color(self, img: np.ndarray, y_slice, x_slice, color: List[float]):
+        """Helper function to set RGB color avoiding broadcasting issues."""
+        try:
+            img[0, y_slice, x_slice] = color[0]  # Red
+            img[1, y_slice, x_slice] = color[1]  # Green  
+            img[2, y_slice, x_slice] = color[2]  # Blue
+        except ValueError:
+            # Fallback for when shapes don't match
+            if hasattr(y_slice, '__iter__') and hasattr(x_slice, '__iter__'):
+                for y in y_slice:
+                    for x in x_slice:
+                        if 0 <= y < img.shape[1] and 0 <= x < img.shape[2]:
+                            img[0, y, x] = color[0]
+                            img[1, y, x] = color[1] 
+                            img[2, y, x] = color[2]
+    
     def _create_synthetic_image(self, class_idx: int, variation: int) -> np.ndarray:
         """Create a synthetic image with rich visual patterns."""
         img = np.zeros((3, self.config.image_size, self.config.image_size), dtype=np.float32)
         size = self.config.image_size
         
-        # Create more complex, realistic patterns for each class
+        # Create simple, reliable patterns for each class
         if class_idx == 0:  # airplane
             # Sky gradient background
             for y in range(size):
                 gradient = y / size
-                img[2, y, :] = 0.7 + 0.2 * np.sin(gradient * np.pi)  # Blue sky
+                img[2, y, :] = 0.7 + 0.2 * gradient  # Blue sky
                 img[1, y, :] = 0.6 + 0.3 * gradient  # Light blue
                 img[0, y, :] = 0.9 - 0.4 * gradient  # White to orange
             
-            # Airplane shape with wings
+            # Simple airplane shape
             center_y = size // 2 + (variation % 6 - 3)
             center_x = size // 2 + (variation % 4 - 2)
             
-            # Fuselage
-            for y in range(max(0, center_y-2), min(size, center_y+2)):
-                for x in range(max(0, center_x-8), min(size, center_x+8)):
-                    img[:, y, x] = [0.9, 0.9, 0.9]  # White plane body
-            
-            # Wings
-            wing_y = center_y
-            for x in range(max(0, center_x-12), min(size, center_x+12)):
-                if 0 <= wing_y < size:
-                    img[:, wing_y, x] = [0.8, 0.8, 0.8]
+            # Airplane body (horizontal line)
+            for x in range(max(0, center_x-6), min(size, center_x+6)):
+                for dy in range(-1, 2):
+                    y = center_y + dy
+                    if 0 <= y < size:
+                        img[0, y, x] = 0.9  # White plane
+                        img[1, y, x] = 0.9
+                        img[2, y, x] = 0.9
             
         elif class_idx == 1:  # automobile
-            # Road scene
+            # Simple road scene
             road_start = 2 * size // 3
             img[0, road_start:, :] = 0.3  # Gray road
             img[1, road_start:, :] = 0.3
@@ -121,442 +135,75 @@ class ImageNetStyleDataset:
             img[2, :road_start, :] = 0.6  # Blue sky
             img[1, :road_start, :] = 0.7
             
-            # Car body
-            car_y = road_start - 8
+            # Simple car shape
+            car_y = road_start - 6
             car_x = size // 4 + (variation % 8)
-            car_width = size // 3
-            car_height = 6
             
-            # Main body
-            img[:, car_y:car_y+car_height, car_x:car_x+car_width] = [0.7, 0.2, 0.2]  # Red car
-            
-            # Windows
-            window_y = car_y + 1
-            window_height = 3
-            img[:, window_y:window_y+window_height, car_x+2:car_x+car_width-2] = [0.4, 0.6, 0.9]  # Blue windows
-            
-            # Wheels
-            wheel_y = car_y + car_height - 1
-            img[:, wheel_y:wheel_y+2, car_x+2:car_x+4] = [0.1, 0.1, 0.1]  # Black wheel
-            img[:, wheel_y:wheel_y+2, car_x+car_width-4:car_x+car_width-2] = [0.1, 0.1, 0.1]
+            # Car body (simple rectangle)
+            for y in range(max(0, car_y), min(size, car_y + 4)):
+                for x in range(max(0, car_x), min(size, car_x + 8)):
+                    img[0, y, x] = 0.7  # Red car
+                    img[1, y, x] = 0.2
+                    img[2, y, x] = 0.2
             
         elif class_idx == 2:  # bird
-            # Sky background with clouds
+            # Simple sky background
             for y in range(size):
-                for x in range(size):
-                    # Base sky
-                    img[2, y, x] = 0.6 + 0.3 * np.sin(x / size * np.pi)
-                    img[1, y, x] = 0.7 + 0.2 * np.cos(y / size * np.pi)
-                    img[0, y, x] = 0.9 - 0.3 * (y / size)
-                    
-                    # Cloud patterns
-                    if np.sin(x / 3) * np.cos(y / 4) > 0.5:
-                        img[:, y, x] += 0.1
+                gradient = y / size
+                img[2, y, :] = 0.6 + 0.3 * gradient  # Blue sky
+                img[1, y, :] = 0.7 + 0.2 * gradient
+                img[0, y, :] = 0.9 - 0.3 * gradient
             
-            # Bird shape
+            # Simple bird shape
             center_x = size // 2 + (variation % 6 - 3)
             center_y = size // 2 + (variation % 4 - 2)
             
-            # Body (ellipse)
-            for y in range(max(0, center_y-4), min(size, center_y+4)):
-                for x in range(max(0, center_x-6), min(size, center_x+6)):
-                    dx, dy = x - center_x, y - center_y
-                    if (dx**2 / 36 + dy**2 / 16) < 1:
+            # Bird body (small circle)
+            for y in range(max(0, center_y-2), min(size, center_y+2)):
+                for x in range(max(0, center_x-3), min(size, center_x+3)):
+                    if abs(x - center_x) + abs(y - center_y) < 3:
                         img[0, y, x] = 0.8  # Brown bird
                         img[1, y, x] = 0.4
                         img[2, y, x] = 0.1
-            
-            # Wings
-            wing_span = 8
-            for x in range(max(0, center_x-wing_span), min(size, center_x+wing_span)):
-                wing_y = center_y + int(2 * np.sin((x - center_x) / wing_span * np.pi))
-                if 0 <= wing_y < size:
-                    img[0, wing_y, x] = 0.6
-                    img[1, wing_y, x] = 0.3
-                    img[2, wing_y, x] = 0.1
         
-        elif class_idx == 3:  # cat
-            # Indoor scene
-            # Floor
-            floor_start = 3 * size // 4
-            img[0, floor_start:, :] = 0.6  # Wooden floor
-            img[1, floor_start:, :] = 0.4
-            img[2, floor_start:, :] = 0.2
+        else:  # All other classes get simple colored backgrounds
+            # Create a simple colored pattern based on class
+            colors = [
+                [0.8, 0.4, 0.2],  # cat - orange
+                [0.3, 0.6, 0.2],  # deer - green
+                [0.7, 0.6, 0.3],  # dog - golden
+                [0.2, 0.7, 0.3],  # frog - green
+                [0.5, 0.3, 0.1],  # horse - brown
+                [0.4, 0.6, 0.8],  # ship - blue
+                [0.6, 0.6, 0.6],  # truck - gray
+            ]
             
-            # Wall
-            img[0, :floor_start, :] = 0.9  # Light wall
-            img[1, :floor_start, :] = 0.9
-            img[2, :floor_start, :] = 0.8
+            color_idx = max(0, min(len(colors) - 1, class_idx - 3))
+            base_color = colors[color_idx]
             
-            # Cat body
-            center_x = size // 2 + (variation % 4 - 2)
-            center_y = floor_start - 8
-            
-            # Main body (oval)
-            for y in range(max(0, center_y-6), min(size, center_y+4)):
-                for x in range(max(0, center_x-5), min(size, center_x+5)):
-                    dx, dy = x - center_x, y - center_y
-                    if (dx**2 / 25 + dy**2 / 36) < 1:
-                        img[0, y, x] = 0.9  # Orange cat
-                        img[1, y, x] = 0.5
-                        img[2, y, x] = 0.1
-            
-            # Head
-            head_y = center_y - 6
-            head_x = center_x
-            for y in range(max(0, head_y-3), min(size, head_y+3)):
-                for x in range(max(0, head_x-3), min(size, head_x+3)):
-                    dx, dy = x - head_x, y - head_y
-                    if (dx**2 + dy**2) < 9:
-                        img[0, y, x] = 0.9
-                        img[1, y, x] = 0.5
-                        img[2, y, x] = 0.1
-            
-            # Ears
-            if head_y-2 >= 0:
-                img[:, head_y-2:head_y, head_x-2:head_x] = [0.8, 0.4, 0.1]
-                img[:, head_y-2:head_y, head_x:head_x+2] = [0.8, 0.4, 0.1]
-            
-            # Tail
-            tail_start_x = center_x + 5
-            for i in range(8):
-                tail_x = tail_start_x + i
-                tail_y = center_y + int(3 * np.sin(i / 2))
-                if 0 <= tail_x < size and 0 <= tail_y < size:
-                    img[:, tail_y, tail_x] = [0.9, 0.5, 0.1]
-        
-        elif class_idx == 4:  # deer
-            # Forest background
+            # Simple gradient background
             for y in range(size):
-                for x in range(size):
-                    # Trees in background
-                    tree_pattern = np.sin(x / 2) * np.cos(y / 3)
-                    if tree_pattern > 0.3:
-                        img[0, y, x] = 0.2  # Dark green
-                        img[1, y, x] = 0.5
-                        img[2, y, x] = 0.1
-                    else:
-                        img[0, y, x] = 0.3  # Lighter green
-                        img[1, y, x] = 0.6
-                        img[2, y, x] = 0.2
+                gradient = y / size
+                for c in range(3):
+                    img[c, y, :] = base_color[c] * (0.5 + 0.5 * gradient)
             
-            # Ground
-            ground_start = 3 * size // 4
-            img[0, ground_start:, :] = 0.4  # Brown ground
-            img[1, ground_start:, :] = 0.3
-            img[2, ground_start:, :] = 0.1
+            # Simple centered shape
+            center_x, center_y = size // 2, size // 2
+            shape_size = 4 + (variation % 3)
             
-            # Deer body
-            center_x = size // 2 + (variation % 6 - 3)
-            center_y = ground_start - 10
-            
-            # Body (elongated)
-            for y in range(max(0, center_y-4), min(size, center_y+6)):
-                for x in range(max(0, center_x-3), min(size, center_x+8)):
-                    img[0, y, x] = 0.7  # Brown deer
-                    img[1, y, x] = 0.4
-                    img[2, y, x] = 0.2
-            
-            # Legs
-            for leg_x in [center_x, center_x+2, center_x+5, center_x+7]:
-                if 0 <= leg_x < size:
-                    leg_start = center_y + 4
-                    leg_end = min(size, leg_start + 6)
-                    img[:, leg_start:leg_end, leg_x] = [0.6, 0.3, 0.1]
-            
-            # Head and neck
-            neck_x = center_x + 8
-            neck_y = center_y - 6
-            if 0 <= neck_x < size and 0 <= neck_y < size:
-                img[:, neck_y:center_y, neck_x:neck_x+2] = [0.7, 0.4, 0.2]  # Neck
-                # Head
-                for y in range(max(0, neck_y-3), min(size, neck_y+1)):
-                    for x in range(max(0, neck_x-1), min(size, neck_x+3)):
-                        img[:, y, x] = [0.7, 0.4, 0.2]
-                
-                # Antlers
-                if neck_y-4 >= 0:
-                    img[:, neck_y-4:neck_y-2, neck_x:neck_x+2] = [0.4, 0.2, 0.1]
+            for y in range(max(0, center_y - shape_size), min(size, center_y + shape_size)):
+                for x in range(max(0, center_x - shape_size), min(size, center_x + shape_size)):
+                    if abs(x - center_x) + abs(y - center_y) < shape_size:
+                        for c in range(3):
+                            img[c, y, x] = 1.0 - base_color[c]  # Contrasting color
         
-        elif class_idx == 5:  # dog
-            # Park scene
-            # Grass
-            grass_start = 2 * size // 3
-            img[0, grass_start:, :] = 0.2  # Green grass
-            img[1, grass_start:, :] = 0.6
-            img[2, grass_start:, :] = 0.1
-            
-            # Sky
-            for y in range(grass_start):
-                gradient = y / grass_start
-                img[2, y, :] = 0.8 - 0.2 * gradient  # Blue sky
-                img[1, y, :] = 0.7 + 0.2 * gradient
-                img[0, y, :] = 0.9 - 0.1 * gradient
-            
-            # Dog
-            center_x = size // 2 + (variation % 6 - 3)
-            center_y = grass_start - 8
-            
-            # Body
-            for y in range(max(0, center_y-5), min(size, center_y+3)):
-                for x in range(max(0, center_x-6), min(size, center_x+6)):
-                    img[0, y, x] = 0.8  # Golden dog
-                    img[1, y, x] = 0.6
-                    img[2, y, x] = 0.2
-            
-            # Head
-            head_x = center_x - 6
-            head_y = center_y - 2
-            for y in range(max(0, head_y-3), min(size, head_y+3)):
-                for x in range(max(0, head_x-3), min(size, head_x+3)):
-                    dx, dy = x - head_x, y - head_y
-                    if (dx**2 + dy**2) < 9:
-                        img[:, y, x] = [0.8, 0.6, 0.2]
-            
-            # Ears
-            if head_y >= 2:
-                img[:, head_y-2:head_y, head_x-2:head_x] = [0.7, 0.5, 0.1]
-                img[:, head_y-2:head_y, head_x+2:head_x+4] = [0.7, 0.5, 0.1]
-            
-            # Tail (wagging)
-            tail_x = center_x + 6
-            tail_curve = int(4 * np.sin(variation / 3))
-            for i in range(6):
-                tx = tail_x + i
-                ty = center_y + tail_curve + int(2 * np.sin(i / 2))
-                if 0 <= tx < size and 0 <= ty < size:
-                    img[:, ty, tx] = [0.8, 0.6, 0.2]
-        
-        elif class_idx == 6:  # frog
-            # Pond scene
-            # Water
-            for y in range(size):
-                for x in range(size):
-                    wave = np.sin(x / 3) * np.cos(y / 4) * 0.1
-                    img[2, y, x] = 0.4 + wave  # Blue water
-                    img[1, y, x] = 0.6 + wave
-                    img[0, y, x] = 0.2 + abs(wave)
-            
-            # Lily pads
-            for _ in range(3):
-                pad_x = np.random.randint(size//4, 3*size//4)
-                pad_y = np.random.randint(size//4, 3*size//4)
-                for y in range(max(0, pad_y-3), min(size, pad_y+3)):
-                    for x in range(max(0, pad_x-4), min(size, pad_x+4)):
-                        dx, dy = x - pad_x, y - pad_y
-                        if (dx**2 / 16 + dy**2 / 9) < 1:
-                            img[0, y, x] = 0.1  # Dark green lily pad
-                            img[1, y, x] = 0.4
-                            img[2, y, x] = 0.1
-            
-            # Frog
-            center_x = size // 2 + (variation % 6 - 3)
-            center_y = size // 2 + (variation % 4 - 2)
-            
-            # Body
-            for y in range(max(0, center_y-3), min(size, center_y+3)):
-                for x in range(max(0, center_x-4), min(size, center_x+4)):
-                    dx, dy = x - center_x, y - center_y
-                    if (dx**2 / 16 + dy**2 / 9) < 1:
-                        img[0, y, x] = 0.3  # Green frog
-                        img[1, y, x] = 0.8
-                        img[2, y, x] = 0.2
-            
-            # Eyes (protruding)
-            eye_y = center_y - 2
-            for eye_x in [center_x-2, center_x+2]:
-                if 0 <= eye_x < size and 0 <= eye_y < size:
-                    img[:, eye_y, eye_x] = [0.1, 0.1, 0.1]  # Black eyes
-            
-            # Legs (extended)
-            for leg_angle in [0, np.pi/2, np.pi, 3*np.pi/2]:
-                leg_x = center_x + int(6 * np.cos(leg_angle))
-                leg_y = center_y + int(4 * np.sin(leg_angle))
-                if 0 <= leg_x < size and 0 <= leg_y < size:
-                    img[:, leg_y, leg_x] = [0.3, 0.8, 0.2]
-        
-        elif class_idx == 7:  # horse
-            # Field scene
-            # Ground
-            ground_start = 2 * size // 3
-            img[0, ground_start:, :] = 0.4  # Brown field
-            img[1, ground_start:, :] = 0.5
-            img[2, ground_start:, :] = 0.2
-            
-            # Sky with clouds
-            for y in range(ground_start):
-                for x in range(size):
-                    # Base sky
-                    gradient = y / ground_start
-                    img[2, y, x] = 0.8 - 0.2 * gradient
-                    img[1, y, x] = 0.7 + 0.2 * gradient
-                    img[0, y, x] = 0.9 - 0.1 * gradient
-                    
-                    # Clouds
-                    if np.sin(x / 4) * np.cos(y / 5) > 0.6:
-                        img[:, y, x] += 0.1
-            
-            # Horse
-            center_x = size // 2 + (variation % 4 - 2)
-            center_y = ground_start - 12
-            
-            # Body (large oval)
-            for y in range(max(0, center_y-4), min(size, center_y+6)):
-                for x in range(max(0, center_x-8), min(size, center_x+8)):
-                    dx, dy = x - center_x, y - center_y
-                    if (dx**2 / 64 + dy**2 / 25) < 1:
-                        img[0, y, x] = 0.4  # Brown horse
-                        img[1, y, x] = 0.2
-                        img[2, y, x] = 0.1
-            
-            # Neck and head
-            neck_x = center_x - 8
-            neck_y = center_y - 6
-            # Neck
-            for y in range(max(0, neck_y), min(size, center_y)):
-                for x in range(max(0, neck_x-2), min(size, neck_x+2)):
-                    img[:, y, x] = [0.4, 0.2, 0.1]
-            
-            # Head
-            head_x = neck_x - 3
-            head_y = neck_y - 4
-            for y in range(max(0, head_y), min(size, head_y+4)):
-                for x in range(max(0, head_x), min(size, head_x+4)):
-                    img[:, y, x] = [0.4, 0.2, 0.1]
-            
-            # Legs
-            for leg_x in [center_x-6, center_x-2, center_x+2, center_x+6]:
-                if 0 <= leg_x < size:
-                    leg_start = center_y + 4
-                    leg_end = min(size, leg_start + 8)
-                    img[:, leg_start:leg_end, leg_x] = [0.3, 0.15, 0.05]
-            
-            # Mane
-            mane_x = neck_x
-            mane_y = neck_y - 2
-            for i in range(6):
-                mx = mane_x + i - 3
-                my = mane_y + int(2 * np.sin(i))
-                if 0 <= mx < size and 0 <= my < size:
-                    img[:, my, mx] = [0.2, 0.1, 0.05]  # Dark mane
-        
-        elif class_idx == 8:  # ship
-            # Ocean scene
-            # Water with waves
-            for y in range(size):
-                for x in range(size):
-                    wave_height = np.sin(x / 4) * np.cos(y / 6) * 0.1
-                    img[2, y, x] = 0.6 + wave_height  # Blue ocean
-                    img[1, y, x] = 0.4 + abs(wave_height)
-                    img[0, y, x] = 0.2 + wave_height * 0.5
-            
-            # Horizon line
-            horizon = size // 2
-            for x in range(size):
-                wave_offset = int(2 * np.sin(x / 8))
-                horizon_y = horizon + wave_offset
-                if 0 <= horizon_y < size:
-                    img[:, horizon_y, x] = [0.8, 0.8, 0.9]  # Horizon line
-            
-            # Ship
-            ship_x = size // 2 + (variation % 8 - 4)
-            ship_y = horizon + 8
-            
-            # Hull
-            hull_width = 12
-            hull_height = 4
-            for y in range(max(0, ship_y-hull_height), min(size, ship_y)):
-                for x in range(max(0, ship_x-hull_width//2), min(size, ship_x+hull_width//2)):
-                    img[0, y, x] = 0.5  # Gray hull
-                    img[1, y, x] = 0.3
-                    img[2, y, x] = 0.2
-            
-            # Mast
-            mast_x = ship_x
-            mast_height = 12
-            for y in range(max(0, ship_y-mast_height), min(size, ship_y-hull_height)):
-                if 0 <= mast_x < size:
-                    img[:, y, mast_x] = [0.4, 0.2, 0.1]  # Brown mast
-            
-            # Sail
-            sail_width = 8
-            sail_height = 8
-            sail_x = mast_x - sail_width // 2
-            sail_y = ship_y - mast_height + 2
-            for y in range(max(0, sail_y), min(size, sail_y + sail_height)):
-                for x in range(max(0, sail_x), min(size, sail_x + sail_width)):
-                    img[:, y, x] = [0.9, 0.9, 0.9]  # White sail
-        
-        else:  # truck (class_idx == 9)
-            # Highway scene
-            # Road
-            road_start = 2 * size // 3
-            img[0, road_start:, :] = 0.3  # Gray road
-            img[1, road_start:, :] = 0.3
-            img[2, road_start:, :] = 0.3
-            
-            # Road markings
-            center_line = size // 2
-            for x in range(0, size, 4):
-                if x + 2 <= size:
-                    img[:, road_start + 2, x:x+2] = [1.0, 1.0, 1.0]  # White lines
-            
-            # Sky
-            for y in range(road_start):
-                gradient = y / road_start
-                img[2, y, :] = 0.7 - 0.1 * gradient  # Blue sky
-                img[1, y, :] = 0.8 + 0.1 * gradient
-                img[0, y, x] = 0.9
-            
-            # Truck
-            truck_x = size // 3 + (variation % 8)
-            truck_y = road_start - 12
-            
-            # Truck body (larger than car)
-            truck_width = 16
-            truck_height = 8
-            for y in range(max(0, truck_y), min(size, truck_y + truck_height)):
-                for x in range(max(0, truck_x), min(size, truck_x + truck_width)):
-                    img[0, y, x] = 0.8  # Red truck
-                    img[1, y, x] = 0.2
-                    img[2, y, x] = 0.1
-            
-            # Cab
-            cab_width = 6
-            cab_height = 4
-            cab_x = truck_x
-            cab_y = truck_y - cab_height
-            for y in range(max(0, cab_y), min(size, truck_y)):
-                for x in range(max(0, cab_x), min(size, cab_x + cab_width)):
-                    img[:, y, x] = [0.8, 0.2, 0.1]
-            
-            # Windows
-            window_y = cab_y + 1
-            window_height = 2
-            img[:, window_y:window_y+window_height, cab_x+1:cab_x+cab_width-1] = [0.4, 0.6, 0.9]
-            
-            # Wheels
-            wheel_y = truck_y + truck_height - 1
-            wheel_positions = [truck_x + 2, truck_x + truck_width - 4]
-            for wheel_x in wheel_positions:
-                if 0 <= wheel_x < size - 2:
-                    img[:, wheel_y:wheel_y+2, wheel_x:wheel_x+2] = [0.1, 0.1, 0.1]  # Black wheels
-        
-        # Add realistic noise and lighting variations
-        noise_strength = 0.03
-        noise = np.random.normal(0, noise_strength, img.shape).astype(np.float32)
+        # Add noise and variation
+        noise = np.random.normal(0, 0.03, img.shape).astype(np.float32)
         img += noise
         
-        # Lighting variation
-        brightness = 0.8 + 0.4 * (variation % 20) / 20
-        contrast = 0.7 + 0.6 * (variation % 17) / 17
-        img = img * contrast + (brightness - 1)
-        
-        # Color variation
-        color_shift = (variation % 13) / 13 * 0.1 - 0.05
-        img[0] += color_shift  # Red channel shift
-        img[1] += color_shift * 0.5  # Green channel shift
-        img[2] -= color_shift * 0.3  # Blue channel shift
+        # Add brightness variation
+        brightness = 0.8 + 0.4 * (variation % 10) / 10
+        img *= brightness
         
         # Clip to valid range
         img = np.clip(img, 0, 1)
@@ -739,9 +386,9 @@ class ViTTrainer:
             progress = (epoch - self.config.warmup_epochs) / (self.config.num_epochs - self.config.warmup_epochs)
             self.current_lr = self.config.learning_rate * 0.5 * (1 + np.cos(np.pi * progress))
         
-        # Update optimizer learning rate
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.current_lr
+        # Update optimizer learning rate (simplified for our framework)
+        if hasattr(self.optimizer, 'lr'):
+            self.optimizer.lr = self.current_lr
     
     def forward_pass(self, images: Tensor, labels: Tensor) -> Tuple[Tensor, Dict[str, float]]:
         """Forward pass through Vision Transformer."""
@@ -915,8 +562,8 @@ class ViTTrainer:
             
             predictions = np.argmax(logits.data, axis=1)
             for i in range(len(labels.data)):
-                label = labels.data[i]
-                if label < self.config.num_classes:  # Valid label
+                label = int(labels.data[i])  # Ensure label is an integer
+                if 0 <= label < self.config.num_classes:  # Valid label
                     class_total[label] += 1
                     if predictions[i] == label:
                         class_correct[label] += 1
@@ -1016,26 +663,26 @@ def main():
     print("👁️ Vision Transformer Training on Real Image Classification")
     print("=" * 70)
     
-    # Training configuration
+    # Training configuration - Smaller for quick demo
     config = ViTTrainingConfig(
         # Model config
         image_size=32,
         patch_size=4,
         num_classes=10,
-        d_model=256,
-        depth=6,
-        num_heads=8,
+        d_model=128,    # Smaller model
+        depth=3,        # Fewer layers
+        num_heads=4,    # Fewer heads
         mlp_ratio=4.0,
         dropout=0.1,
         
         # Training config
-        batch_size=12,
+        batch_size=16,
         learning_rate=1e-3,
-        num_epochs=6,
+        num_epochs=3,   # Fewer epochs for demo
         warmup_epochs=1,
-        train_size=400,  # 400 images per class
-        val_size=80,    # 80 images per class
-        test_size=40,   # 40 images per class
+        train_size=100,  # 100 images per class for demo
+        val_size=20,     # 20 images per class
+        test_size=10,    # 10 images per class
         
         # Data augmentation
         use_augmentation=True,
