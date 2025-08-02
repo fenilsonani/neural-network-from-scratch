@@ -194,6 +194,24 @@ nohup.out
 *.sql
 *.dump
 
+# Build artifacts and results
+mathematical_accuracy_results.json
+benchmarks/results/
+htmlcov/
+coverage/
+.coverage*
+*.json
+!package.json
+!requirements*.json
+!pyproject.toml
+!setup.json
+!config.example.json
+!schema.json
+
+# Scripts output
+scripts/output/
+tools/output/
+
 # Security - Never commit these!
 *.pem
 *.key
