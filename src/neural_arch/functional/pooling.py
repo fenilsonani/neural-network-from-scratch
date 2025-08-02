@@ -92,14 +92,33 @@ def max_pool(x: Tensor, axis: int = 1) -> Tensor:
             # Expand dimensions to match input
             grad_output_expanded = np.expand_dims(grad_output, axis=axis)
 
-            # Create indices for advanced indexing
-            input_shape = list(x.shape)
-            indices = [np.arange(dim) for dim in input_shape]
-            indices[axis] = max_indices
-
-            # Use advanced indexing to set gradients at max positions
-            mesh_indices = np.meshgrid(*indices, indexing="ij")
-            grad_input[tuple(mesh_indices)] = grad_output_expanded.flatten()
+            # For each position in the output, find the corresponding max position in input
+            # and set the gradient there
+            if axis == 0:
+                # Pooling along batch dimension
+                for i, max_idx in enumerate(max_indices):
+                    grad_input[max_idx] = grad_output[i]
+            elif axis == 1:
+                # Pooling along sequence/time dimension
+                for batch_idx in range(x.shape[0]):
+                    for feat_idx in range(x.shape[2] if x.ndim > 2 else 1):
+                        max_pos = max_indices[batch_idx] if x.ndim == 2 else max_indices[batch_idx, feat_idx]
+                        if x.ndim == 2:
+                            grad_input[batch_idx, max_pos] = grad_output[batch_idx]
+                        else:
+                            grad_input[batch_idx, max_pos, feat_idx] = grad_output[batch_idx, feat_idx]
+            elif axis == 2:
+                # Pooling along feature dimension
+                for batch_idx in range(x.shape[0]):
+                    for seq_idx in range(x.shape[1]):
+                        max_pos = max_indices[batch_idx, seq_idx]
+                        grad_input[batch_idx, seq_idx, max_pos] = grad_output[batch_idx, seq_idx]
+            else:
+                # General case - use broadcasting approach
+                grad_output_broadcast = np.broadcast_to(grad_output_expanded, x.shape)
+                # Create mask where max values occurred
+                max_mask = (x.data == np.expand_dims(result_data, axis=axis))
+                grad_input = grad_output_broadcast * max_mask
 
             x.backward(grad_input)
             if hasattr(x, "_backward"):

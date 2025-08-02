@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Union
 
 from ..core.tensor import Tensor
 from ..nn.module import Module
-from ..optim.base import Optimizer
+from ..core.base import Optimizer
 from ..optimization_config import get_config
 from .communication import get_rank, get_world_size, init_process_group, is_initialized
 from .data_parallel import DistributedDataParallel
