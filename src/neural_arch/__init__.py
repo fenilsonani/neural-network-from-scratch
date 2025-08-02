@@ -35,6 +35,16 @@ from .core import (
     set_default_dtype,
 )
 
+# Exceptions
+from .exceptions import (
+    DeviceError,
+    DTypeError,
+    GradientError,
+    NeuralArchError,
+    ShapeError,
+    TensorError,
+)
+
 # Functional operations
 from .functional import (
     add,
@@ -70,16 +80,6 @@ from .nn import (
 # Optimizers
 from .optim import SGD, Adam, AdamW
 
-# Exceptions
-from .exceptions import (
-    DeviceError,
-    DTypeError,
-    GradientError,
-    NeuralArchError,
-    ShapeError,
-    TensorError,
-)
-
 # Import optimization configuration system
 try:
     from .optimization_config import configure
@@ -91,11 +91,11 @@ except ImportError:
     # Optimization config not available
     _optimization_config_available = False
 
-# Backward compatibility utilities
-from .utils import create_text_vocab, propagate_gradients, text_to_sequences
-
 # CLI
 from .cli import main as cli_main
+
+# Backward compatibility utilities
+from .utils import create_text_vocab, propagate_gradients, text_to_sequences
 
 # Set up enterprise-grade public API
 __all__ = [

@@ -7,7 +7,6 @@ that can achieve 5-10x speedup over standard implementations.
 import logging
 from typing import Any, Tuple
 
-
 try:
     import cupy as cp
     from cupy import cuda
