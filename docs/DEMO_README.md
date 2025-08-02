@@ -1,28 +1,25 @@
-# 🚀 Neural Architecture Framework - Interactive Demo
+# Neural Architecture Framework - Interactive Demo
 
-Welcome to the interactive demonstration of our cutting-edge Neural Architecture Framework! This Streamlit application showcases the power of automatic optimizations and intelligent backend selection.
+Welcome to the interactive demonstration of the Neural Architecture Framework. This demo showcases basic functionality of the framework using simple examples.
 
-## ✨ Features Demonstrated
+## Features Demonstrated
 
-### 🧠 BERT Text Analysis
-- **Real-time sentiment analysis** with automatic optimizations
-- **Hardware-adaptive performance** (CUDA/CPU/JIT backends)
-- **Zero-code-change optimizations** applied automatically
-- **Interactive text analysis** with confidence scores
+### BERT Text Analysis (Planned)
+- Basic sentiment analysis example
+- Demonstrates transformer architecture usage
+- Shows tensor operations and gradient computation
 
-### 🎭 GPT-2 Text Generation  
-- **Creative text generation** with advanced sampling techniques
-- **Multiple model sizes** (Small: 117M, Medium: 345M parameters)
-- **Advanced sampling controls** (temperature, top-k, top-p)
-- **Real-time performance metrics** and backend selection
+### GPT-2 Text Generation (Planned)  
+- Simple text generation example
+- Demonstrates autoregressive modeling
+- Shows sampling techniques
 
-### 📊 Performance Insights
-- **Live performance metrics** and optimization statistics
-- **Backend comparison** and intelligent selection
-- **Memory and speed optimizations** visualization
-- **Framework capabilities** overview
+### Framework Capabilities
+- Basic tensor operations demonstration
+- Neural network layer examples
+- Training loop illustration
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Automated Launch
 ```bash

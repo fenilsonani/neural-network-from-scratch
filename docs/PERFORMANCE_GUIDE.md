@@ -1,28 +1,22 @@
-# Performance Optimizations & Benchmarks
+# Performance Guide
 
-## 🚀 Framework Performance Achievements
+## Performance Overview
 
-The neural architecture framework delivers **3.46x overall speedup** through advanced optimization techniques, with **custom CUDA kernels providing up to 5-10x GPU acceleration**, achieving performance competitive with TensorFlow and PyTorch.
+The neural architecture framework includes several optimization techniques to improve performance for educational and research workloads. Performance improvements vary significantly depending on workload characteristics and hardware configuration.
 
-## Performance Summary
+## Optimization Techniques
 
-| Optimization | Speedup | Memory Savings | Status |
-|-------------|---------|---------------|---------|
-| JIT Compilation (GELU) | **6.55x** | - | ✅ Completed |
-| Linear + GELU Fusion | **3.17x** | 40% | ✅ Completed |
-| Operator Fusion | **6.82x** | 2.0 MB | ✅ Completed |
-| Mixed Precision | **0.44x*** | 50% | ✅ Completed |
-| Complete MLP | **0.34x*** | - | ⚠️ Needs optimization |
-| **Custom CUDA Kernels** | **5-10x** | 80%+ | ✅ **NEW** |
-| **Flash Attention** | **3-5x** | 90%+ | ✅ **NEW** |
-| **Fused GPU Operations** | **2-4x** | 60% | ✅ **NEW** |
-| **Gradient Checkpointing** | **1.0x** | 50-90% | ✅ **NEW** |
-| **Memory Pooling** | **1.2-2x** | 30-60% | ✅ **NEW** |
-| **Distributed Training** | **Nx** | - | ✅ **NEW** |
-| **Graph Optimization** | **2-3x** | 20-40% | ✅ **NEW** |
-| **Mathematical Accuracy** | **248x** | - | ✅ **NEW** |
+The framework implements several optimization approaches:
 
-*Some optimizations show regression due to overhead - optimization opportunities identified.
+| Technique | Implementation Status | Notes |
+|-----------|----------------------|-------|
+| JIT Compilation | Experimental | Requires Numba installation |
+| Operator Fusion | In Development | Linear + activation combinations |
+| Mixed Precision | Planned | For compatible hardware |
+| GPU Backends | Experimental | MPS (Apple) and CUDA support |
+| Memory Optimization | Basic | Gradient accumulation and cleanup |
+
+**Note**: Performance improvements are workload-dependent and may not be significant for small models or educational examples.
 
 ## Implemented Optimizations
 

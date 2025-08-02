@@ -1,10 +1,10 @@
-# 📚 API Reference - Neural Architecture Implementation
+# API Reference - Neural Architecture Framework
 
-Complete API documentation for the neural network implementation from scratch.
+Complete API documentation for the neural network implementation.
 
-## 🧠 **Core Components**
+## Core Components
 
-### **Tensor Class**
+### Tensor Class
 
 The foundation of the neural network - a tensor with automatic differentiation.
 
@@ -13,7 +13,7 @@ class Tensor:
     """Tensor with automatic differentiation support."""
 ```
 
-#### **Constructor**
+#### Constructor
 ```python
 Tensor(data: Union[np.ndarray, list, float], requires_grad: bool = False)
 ```
@@ -29,7 +29,7 @@ x = Tensor([[1, 2, 3]], requires_grad=True)
 y = Tensor([4.5], requires_grad=False)
 ```
 
-#### **Properties**
+#### Properties
 ```python
 @property
 def shape(self) -> Tuple[int, ...]:
@@ -49,7 +49,7 @@ def requires_grad(self) -> bool:
     """Check if gradients are tracked."""
 ```
 
-#### **Methods**
+#### Methods
 ```python
 def zero_grad(self) -> None:
     """Reset gradients to None."""
@@ -69,9 +69,9 @@ print(x.grad)  # None
 
 ---
 
-## ⚙️ **Tensor Operations**
+## Tensor Operations
 
-### **Mathematical Operations**
+### Mathematical Operations
 
 #### **Addition**
 ```python
@@ -182,7 +182,7 @@ class Linear:
 - `b`: Bias vector `(out_features,)`
 - `y`: Output tensor `(batch_size, out_features)`
 
-#### **Methods**
+#### Methods
 ```python
 def __call__(self, x: Tensor) -> Tensor:
     """Forward pass through the layer."""
@@ -222,7 +222,7 @@ class Embedding:
 #### **Mathematical Definition**
 For input indices `idx`, returns `embedding_matrix[idx]`
 
-#### **Methods**
+#### Methods
 ```python
 def __call__(self, indices: np.ndarray) -> Tensor:
     """Embed input indices."""
@@ -276,7 +276,7 @@ Where:
 - `β₂ = 0.999` (RMSprop decay)
 - `ε = 1e-8` (numerical stability)
 
-#### **Methods**
+#### Methods
 ```python
 def step(self) -> None:
     """Update parameters using computed gradients."""

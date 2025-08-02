@@ -20,7 +20,7 @@ def get_long_description():
     readme_file = Path(__file__).parent / "README.md"
     if readme_file.exists():
         return readme_file.read_text(encoding="utf-8")
-    return "Enterprise-grade neural network implementation from scratch"
+    return "Educational neural network implementation from scratch using NumPy"
 
 def get_requirements():
     """Get requirements from requirements.txt file."""
@@ -42,16 +42,16 @@ setup(
     # Package metadata
     name="neural-arch",
     version=get_version(),
-    description="Enterprise-grade neural network implementation from scratch",
+    description="Educational neural network implementation from scratch using NumPy",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    author="Neural Architecture Team",
-    author_email="contact@neural-arch.ai",
-    url="https://github.com/your-org/neural-arch",
+    author="Fenil Sonani",
+    author_email="fenilsonani@gmail.com",
+    url="https://github.com/fenilsonani/neural-network-from-scratch",
     project_urls={
-        "Bug Reports": "https://github.com/your-org/neural-arch/issues",
-        "Source": "https://github.com/your-org/neural-arch",
-        "Documentation": "https://neural-arch.readthedocs.io/",
+        "Bug Reports": "https://github.com/fenilsonani/neural-network-from-scratch/issues",
+        "Source": "https://github.com/fenilsonani/neural-network-from-scratch",
+        "Documentation": "https://github.com/fenilsonani/neural-network-from-scratch/tree/main/docs",
     },
     
     # Package configuration
