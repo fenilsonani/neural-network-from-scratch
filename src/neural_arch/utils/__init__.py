@@ -1,14 +1,15 @@
 """Utility functions for backward compatibility."""
 
+from typing import Dict, Optional, Tuple
+
 import numpy as np
-from typing import Dict, Tuple, Optional
 
 from ..core import Tensor
 
 
 def propagate_gradients(tensor: Tensor) -> None:
     """Propagate gradients through computation graph (backward compatibility)."""
-    if hasattr(tensor, '_backward'):
+    if hasattr(tensor, "_backward"):
         tensor._backward()
 
 
@@ -24,7 +25,7 @@ def text_to_sequences(text: str, seq_len: int, char_to_idx: Dict[str, int]) -> n
     """Convert text to training sequences."""
     sequences = []
     for i in range(len(text) - seq_len):
-        seq = text[i:i + seq_len + 1]
+        seq = text[i : i + seq_len + 1]
         indices = [char_to_idx.get(c, 0) for c in seq]
         sequences.append(indices)
     return np.array(sequences)

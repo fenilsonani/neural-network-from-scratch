@@ -1,0 +1,45 @@
+{
+  "epoch": 0,
+  "config": {
+    "image_size": 32,
+    "patch_size": 4,
+    "num_classes": 10,
+    "d_model": 128,
+    "depth": 3,
+    "num_heads": 4,
+    "mlp_ratio": 4.0,
+    "dropout": 0.1,
+    "attention_dropout": 0.1,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "weight_decay": 0.1,
+    "num_epochs": 3,
+    "warmup_epochs": 1,
+    "max_grad_norm": 1.0,
+    "train_size": 100,
+    "val_size": 20,
+    "test_size": 10,
+    "use_augmentation": true,
+    "horizontal_flip": true,
+    "random_crop": true,
+    "color_jitter": true,
+    "enable_optimizations": true,
+    "save_checkpoints": true,
+    "checkpoint_dir": "checkpoints/vit"
+  },
+  "metrics": {
+    "train": {
+      "loss": 1.6894547636546786,
+      "accuracy": 0.48412698412698413,
+      "top5_accuracy": 0.9196428571428571,
+      "time": 3.8185839653015137
+    },
+    "val": {
+      "loss": 1.3271952133912306,
+      "accuracy": 0.7692307692307693,
+      "top5_accuracy": 1.0,
+      "time": 0.6239831447601318
+    }
+  },
+  "learning_rate": 0.001
+}

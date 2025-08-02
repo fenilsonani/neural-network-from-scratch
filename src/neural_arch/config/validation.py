@@ -1,12 +1,13 @@
 """Configuration validation utilities (placeholder)."""
 
+from typing import Any, Dict, Union
+
 from .config import Config
-from typing import Union, Dict, Any
 
 
 class ConfigValidator:
     """Configuration validator (placeholder)."""
-    
+
     @staticmethod
     def validate(config: Union[Config, Dict[str, Any]]) -> bool:
         """Validate configuration."""

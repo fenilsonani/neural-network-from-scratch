@@ -1,0 +1,83 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "neural-arch-team"
+    assignees:
+      - "neural-arch-maintainer"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pytest"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group testing dependencies together
+      testing-dependencies:
+        patterns:
+          - "pytest*"
+          - "coverage*"
+          - "*test*"
+        exclude-patterns:
+          - "pytest-benchmark"  # Keep benchmark updates separate
+      # Group security tools together  
+      security-tools:
+        patterns:
+          - "bandit*"
+          - "safety*"
+          - "*security*"
+      # Group development tools
+      dev-tools:
+        patterns:
+          - "black"
+          - "flake8"
+          - "mypy" 
+          - "isort"
+          - "pre-commit"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci/cd"
+    groups:
+      # Group action updates by provider
+      github-actions:
+        patterns:
+          - "actions/*"
+      third-party-actions:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "actions/*"

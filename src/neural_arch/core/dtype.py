@@ -1,40 +1,41 @@
 """Data type management for tensors."""
 
-import numpy as np
 from enum import Enum
-from typing import Union, Type
+from typing import Type, Union
+
+import numpy as np
 
 
 class DType(Enum):
     """Supported data types for tensors."""
-    
+
     FLOAT16 = np.float16  # Half precision for mixed precision training
     FLOAT32 = np.float32
     FLOAT64 = np.float64
     INT32 = np.int32
     INT64 = np.int64
     BOOL = np.bool_
-    
+
     @property
     def numpy_dtype(self) -> Type[np.number]:
         """Get the corresponding NumPy data type."""
         return self.value
-    
+
     @property
     def is_floating(self) -> bool:
         """Check if this is a floating-point data type."""
         return self in (DType.FLOAT16, DType.FLOAT32, DType.FLOAT64)
-    
+
     @property
     def is_integer(self) -> bool:
         """Check if this is an integer data type."""
         return self in (DType.INT32, DType.INT64)
-    
+
     @property
     def bytes_per_element(self) -> int:
         """Get the number of bytes per element."""
         return np.dtype(self.value).itemsize
-    
+
     @classmethod
     def from_numpy(cls, numpy_dtype: Union[np.dtype, Type[np.number], str]) -> 'DType':
         """Create DType from NumPy dtype."""
@@ -42,16 +43,16 @@ class DType(Enum):
             numpy_dtype = np.dtype(numpy_dtype)
         elif not isinstance(numpy_dtype, np.dtype):
             numpy_dtype = np.dtype(numpy_dtype)
-            
+
         for dtype in cls:
             if dtype.numpy_dtype == numpy_dtype.type:
                 return dtype
-                
+
         raise ValueError(f"Unsupported NumPy dtype: {numpy_dtype}")
-    
+
     def __str__(self) -> str:
         return self.name.lower()
-    
+
     def __repr__(self) -> str:
         return f"DType.{self.name}"
 

@@ -1,6 +1,6 @@
 """Command-line interface for Neural Architecture."""
 
-from .main import main, create_cli
 from .commands import *
+from .main import create_cli, main
 
 __all__ = ["main", "create_cli"]

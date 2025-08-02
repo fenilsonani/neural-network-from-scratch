@@ -2,7 +2,6 @@
 
 from .config import Config
 
-
 # Default configuration for general use
 DEFAULT_CONFIG = Config(
     debug=False,
@@ -18,15 +17,11 @@ DEFAULT_CONFIG = Config(
     gradient_clipping=True,
     gradient_clip_value=10.0,
     optimizer="adam",
-    optimizer_params={
-        "beta1": 0.9,
-        "beta2": 0.999,
-        "eps": 1e-8
-    },
+    optimizer_params={"beta1": 0.9, "beta2": 0.999, "eps": 1e-8},
     performance_thresholds={
         "tensor_creation_ms": 10.0,
         "matmul_ms": 100.0,
-        "training_step_ms": 1000.0
+        "training_step_ms": 1000.0,
     },
     memory_monitoring=True,
     enable_profiling=False,
@@ -66,7 +61,7 @@ PRODUCTION_CONFIG = DEFAULT_CONFIG.update(
     performance_thresholds={
         "tensor_creation_ms": 5.0,  # Stricter requirements
         "matmul_ms": 50.0,
-        "training_step_ms": 500.0
+        "training_step_ms": 500.0,
     },
 )
 
@@ -81,7 +76,7 @@ HIGH_PERFORMANCE_CONFIG = PRODUCTION_CONFIG.update(
     performance_thresholds={
         "tensor_creation_ms": 2.0,  # Very strict requirements
         "matmul_ms": 25.0,
-        "training_step_ms": 250.0
+        "training_step_ms": 250.0,
     },
     num_threads=None,  # Use all available cores
 )
@@ -121,7 +116,7 @@ RESEARCH_CONFIG = DEFAULT_CONFIG.update(
     metadata={
         "research_purpose": "neural_architecture_experiment",
         "baseline_comparison": True,
-    }
+    },
 )
 
 
@@ -149,7 +144,7 @@ TESTING_CONFIG = Config(
     performance_thresholds={
         "tensor_creation_ms": 100.0,  # Relaxed for testing
         "matmul_ms": 1000.0,
-        "training_step_ms": 10000.0
+        "training_step_ms": 10000.0,
     },
 )
 
@@ -173,26 +168,26 @@ CONFIG_PRESETS = {
 
 def get_preset_config(preset_name: str) -> Config:
     """Get a preset configuration by name.
-    
+
     Args:
         preset_name: Name of the preset configuration
-        
+
     Returns:
         Configuration preset
-        
+
     Raises:
         ValueError: If preset name is not found
     """
     if preset_name not in CONFIG_PRESETS:
         available = ", ".join(CONFIG_PRESETS.keys())
         raise ValueError(f"Unknown preset '{preset_name}'. Available presets: {available}")
-    
+
     return CONFIG_PRESETS[preset_name]
 
 
 def list_preset_configs() -> list:
     """List all available preset configuration names.
-    
+
     Returns:
         List of preset names
     """
