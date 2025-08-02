@@ -14,146 +14,10 @@ import numpy as np
 
 from ...core import Module, Parameter, Tensor
 from ...functional import relu
-from ...nn import Linear
+from ...nn import BatchNorm2d, Conv2d, Linear, Sequential
 from ..registry import register_model
 from ..utils import ModelCard
 
-
-class Conv2d(Module):
-    """2D Convolution layer with modern features."""
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        stride: int = 1,
-        padding: int = 0,
-        dilation: int = 1,
-        groups: int = 1,
-        bias: bool = True,
-        padding_mode: str = "zeros",
-    ):
-        super().__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = (
-            kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
-        )
-        self.stride = stride if isinstance(stride, tuple) else (stride, stride)
-        self.padding = padding if isinstance(padding, tuple) else (padding, padding)
-        self.dilation = dilation if isinstance(dilation, tuple) else (dilation, dilation)
-        self.groups = groups
-        self.padding_mode = padding_mode
-
-        # Initialize weights using He initialization
-        fan_in = in_channels * self.kernel_size[0] * self.kernel_size[1]
-        std = np.sqrt(2.0 / fan_in)
-
-        self.weight = Parameter(
-            np.random.randn(out_channels, in_channels // groups, *self.kernel_size).astype(
-                np.float32
-            )
-            * std
-        )
-
-        if bias:
-            self.bias = Parameter(np.zeros(out_channels, dtype=np.float32))
-        else:
-            self.bias = None
-
-    def forward(self, x: Tensor) -> Tensor:
-        """Forward pass with optimized convolution."""
-        # Simplified conv2d implementation for now
-        # In production, this would use optimized convolution algorithms
-        batch_size, in_channels, height, width = x.shape
-        out_height = (height + 2 * self.padding[0] - self.kernel_size[0]) // self.stride[0] + 1
-        out_width = (width + 2 * self.padding[1] - self.kernel_size[1]) // self.stride[1] + 1
-
-        # Apply padding
-        if self.padding[0] > 0 or self.padding[1] > 0:
-            x_padded = np.pad(
-                x.data,
-                (
-                    (0, 0),
-                    (0, 0),
-                    (self.padding[0], self.padding[0]),
-                    (self.padding[1], self.padding[1]),
-                ),
-                mode="constant",
-            )
-        else:
-            x_padded = x.data
-
-        # Perform convolution (simplified)
-        output = np.zeros((batch_size, self.out_channels, out_height, out_width), dtype=np.float32)
-
-        for b in range(batch_size):
-            for oc in range(self.out_channels):
-                for oh in range(out_height):
-                    for ow in range(out_width):
-                        h_start = oh * self.stride[0]
-                        w_start = ow * self.stride[1]
-
-                        receptive_field = x_padded[
-                            b,
-                            :,
-                            h_start : h_start + self.kernel_size[0],
-                            w_start : w_start + self.kernel_size[1],
-                        ]
-                        output[b, oc, oh, ow] = np.sum(receptive_field * self.weight.data[oc])
-
-                        if self.bias is not None:
-                            output[b, oc, oh, ow] += self.bias.data[oc]
-
-        return Tensor(output, requires_grad=x.requires_grad or self.weight.requires_grad)
-
-
-class BatchNorm2d(Module):
-    """Batch Normalization for 2D inputs (batch, channels, height, width)."""
-
-    def __init__(self, num_features: int, eps: float = 1e-5, momentum: float = 0.1):
-        super().__init__()
-        self.num_features = num_features
-        self.eps = eps
-        self.momentum = momentum
-
-        # Learnable parameters
-        self.weight = Parameter(np.ones(num_features, dtype=np.float32))
-        self.bias = Parameter(np.zeros(num_features, dtype=np.float32))
-
-        # Running statistics (not learnable)
-        self.running_mean = np.zeros(num_features, dtype=np.float32)
-        self.running_var = np.ones(num_features, dtype=np.float32)
-
-    def forward(self, x: Tensor) -> Tensor:
-        """Apply batch normalization."""
-        if self.training:
-            # Calculate batch statistics
-            mean = np.mean(x.data, axis=(0, 2, 3), keepdims=True)
-            var = np.var(x.data, axis=(0, 2, 3), keepdims=True)
-
-            # Update running statistics
-            self.running_mean = (
-                1 - self.momentum
-            ) * self.running_mean + self.momentum * mean.squeeze()
-            self.running_var = (
-                1 - self.momentum
-            ) * self.running_var + self.momentum * var.squeeze()
-        else:
-            # Use running statistics
-            mean = self.running_mean.reshape(1, -1, 1, 1)
-            var = self.running_var.reshape(1, -1, 1, 1)
-
-        # Normalize
-        x_norm = (x.data - mean) / np.sqrt(var + self.eps)
-
-        # Scale and shift
-        weight = self.weight.data.reshape(1, -1, 1, 1)
-        bias = self.bias.data.reshape(1, -1, 1, 1)
-        output = x_norm * weight + bias
-
-        return Tensor(output, requires_grad=x.requires_grad or self.weight.requires_grad)
 
 
 class SqueezeExcitation(Module):
@@ -423,19 +287,6 @@ class ResNet(Module):
         x = Tensor(x_data, requires_grad=x.requires_grad)
         x = self.fc(x)
 
-        return x
-
-
-class Sequential(Module):
-    """Sequential container for modules."""
-
-    def __init__(self, *modules):
-        super().__init__()
-        self.modules_list = list(modules)
-
-    def forward(self, x: Tensor) -> Tensor:
-        for module in self.modules_list:
-            x = module(x)
         return x
 
 

@@ -411,6 +411,10 @@ def handle_exception(func):
                 f"Memory error in {func.__name__}: {e}", resource_type="memory"
             ) from e
 
+        except NeuralArchError:
+            # Re-raise neural arch errors as-is (including LayerError, etc.)
+            raise
+            
         except Exception as e:
             # Catch-all for unexpected errors
             raise NeuralArchError(

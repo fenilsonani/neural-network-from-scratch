@@ -1181,3 +1181,131 @@ class InstanceNorm(Module):
     def extra_repr(self) -> str:
         """Return extra string representation."""
         return f"num_features={self.num_features}, eps={self.eps}, affine={self.affine}"
+
+
+class BatchNorm3d(BatchNorm1d):
+    """3D Batch Normalization for volumetric convolutional layers.
+    
+    Applies batch normalization over 5D input (N, C, D, H, W).
+    Same mathematics as BatchNorm1d but different tensor dimensions.
+    """
+
+    @memory_efficient_operation
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward pass for 3D batch normalization."""
+        # Validate input
+        if x.ndim != 5:
+            raise LayerError(f"BatchNorm3d expects 5D input (N, C, D, H, W), got {x.ndim}D")
+        if x.shape[1] != self.num_features:
+            raise LayerError(
+                f"Input channel dimension {x.shape[1]} != num_features {self.num_features}"
+            )
+
+        # Normalization over (N, D, H, W) dimensions, keeping C
+        norm_axes = (0, 2, 3, 4)
+        stats_shape = (1, self.num_features, 1, 1, 1)
+
+        if self.training:
+            # Training mode: use batch statistics
+            batch_mean = np.mean(x.data, axis=norm_axes, keepdims=True)
+            batch_var = np.var(x.data, axis=norm_axes, keepdims=True, ddof=0)
+
+            # Update running statistics
+            if self.track_running_stats:
+                if self.num_batches_tracked == 0:
+                    self.running_mean = batch_mean.reshape(self.num_features).copy()
+                    self.running_var = batch_var.reshape(self.num_features).copy()
+                else:
+                    batch_mean_1d = batch_mean.reshape(self.num_features)
+                    batch_var_1d = batch_var.reshape(self.num_features)
+                    self.running_mean = (
+                        1 - self.momentum
+                    ) * self.running_mean + self.momentum * batch_mean_1d
+                    self.running_var = (
+                        1 - self.momentum
+                    ) * self.running_var + self.momentum * batch_var_1d
+                self.num_batches_tracked += 1
+
+            mean = batch_mean
+            var = batch_var
+        else:
+            # Evaluation mode: use running statistics
+            if not self.track_running_stats:
+                raise RuntimeError("Cannot use eval mode without track_running_stats=True")
+
+            mean = self.running_mean.reshape(stats_shape)
+            var = self.running_var.reshape(stats_shape)
+
+        # Numerical stability
+        safe_var = var + self.eps
+        std = np.sqrt(safe_var)
+
+        # Normalize
+        normalized = (x.data - mean) / std
+
+        # Scale and shift (if affine=True)
+        if self.affine:
+            weight_broadcast = self.weight.data.reshape(stats_shape)
+            bias_broadcast = self.bias.data.reshape(stats_shape)
+            result_data = normalized * weight_broadcast + bias_broadcast
+        else:
+            result_data = normalized
+
+        result = Tensor(result_data, requires_grad=x.requires_grad)
+
+        if result.requires_grad:
+            # Store intermediate values for gradient computation
+            spatial_size = np.prod([x.shape[i] for i in norm_axes])
+
+            def backward_fn(grad_output):
+                if self.affine:
+                    # Gradient w.r.t weight (gamma)
+                    if self.weight.requires_grad:
+                        grad_weight = np.sum(
+                            grad_output * normalized, axis=tuple([0] + list(norm_axes[1:]))
+                        )
+                        self.weight.backward(grad_weight)
+
+                    # Gradient w.r.t bias (beta)
+                    if self.bias.requires_grad:
+                        grad_bias = np.sum(grad_output, axis=tuple([0] + list(norm_axes[1:])))
+                        self.bias.backward(grad_bias)
+
+                # Gradient w.r.t input
+                if x.requires_grad:
+                    if self.affine:
+                        grad_normalized = grad_output * self.weight.data.reshape(stats_shape)
+                    else:
+                        grad_normalized = grad_output
+
+                    # Compute gradients w.r.t. mean and variance
+                    grad_var = np.sum(
+                        grad_normalized * (x.data - mean) * (-0.5) * (safe_var ** (-1.5)),
+                        axis=norm_axes,
+                        keepdims=True,
+                    )
+                    grad_mean = np.sum(grad_normalized, axis=norm_axes, keepdims=True) / (-std)
+                    grad_mean = (
+                        grad_mean
+                        + grad_var
+                        * np.sum(-2.0 * (x.data - mean), axis=norm_axes, keepdims=True)
+                        / spatial_size
+                    )
+
+                    grad_x = (
+                        grad_normalized / std
+                        + grad_var * 2.0 * (x.data - mean) / spatial_size
+                        + grad_mean / spatial_size
+                    )
+
+                    x.backward(grad_x)
+
+            input_tensors = [x]
+            if self.affine:
+                input_tensors.append(self.weight)
+                input_tensors.append(self.bias)
+
+            result._grad_fn = GradientFunction(backward_fn, input_tensors, "batchnorm3d")
+
+        logger.debug(f"BatchNorm3d forward: {x.shape} -> {result.shape}")
+        return result
