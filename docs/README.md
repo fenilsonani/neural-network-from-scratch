@@ -2,65 +2,68 @@
 
 Welcome to the Neural Architecture Framework documentation!
 
-## Getting Started
+## Quick Start
 
 ### New Users
 1. **[Main README](../README.md)** - Project overview and quick start guide
-2. **Installation Guide** - Setup instructions and dependencies
-3. **Tutorial** - Step-by-step learning guide
+2. **[API Reference](api/reference.md)** - Complete API documentation
+3. **[Demo Guide](user-guide/demo.md)** - Interactive demonstration
 
-### Core Documentation
+### Essential Documentation
 
-#### API Reference
-- **[API Reference](API_REFERENCE.md)** - Complete API documentation
-- **Core Components** - Tensor, Device, and DType systems
-- **Neural Network Layers** - Linear, Attention, Transformer blocks
-- **Functional Operations** - Low-level operations and utilities
-- **Optimizers** - Adam, SGD, and custom optimizers
-
-#### Development Guides
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
-- **[Testing Guide](TESTING.md)** - Running and writing tests
-- **[Performance Guide](PERFORMANCE_GUIDE.md)** - Optimization techniques and benchmarks
-
-### Advanced Topics
-
-#### Performance and Optimization
-- **[CUDA Acceleration Guide](CUDA_ACCELERATION_GUIDE.md)** - GPU acceleration setup
-- **[Memory Optimization Guide](MEMORY_OPTIMIZATION_GUIDE.md)** - Memory management techniques
-- **[Distributed Training Guide](DISTRIBUTED_TRAINING_GUIDE.md)** - Multi-GPU and distributed training
-
-#### Development and Deployment
-- **[CI/CD Architecture](CI_CD_ARCHITECTURE.md)** - Continuous integration setup
-- **[CI/CD Troubleshooting](CI_CD_TROUBLESHOOTING.md)** - Common CI/CD issues and solutions
-
-### Project Information
-
-#### Release Information
-- **[Changelog](CHANGELOG.md)** - Version history and feature changes
-- **Release Notes** - Detailed release information
-
-#### Project Reports
-- **[Demo Guide](DEMO_README.md)** - Interactive demonstration guide
-- **Coverage Reports** - Test coverage analysis
-- **Performance Reports** - Benchmark results and analysis
+- **[API Reference](api/reference.md)** - Complete API documentation with examples
+- **[Testing Guide](user-guide/testing.md)** - Running and writing tests
+- **[Contributing Guide](development/contributing.md)** - How to contribute to the project
 
 ## Documentation Structure
 
 ```
 docs/
-├── README.md                     # This file - documentation index
-├── API_REFERENCE.md             # Complete API documentation
-├── CONTRIBUTING.md              # Contribution guidelines
-├── TESTING.md                   # Testing documentation
-├── PERFORMANCE_GUIDE.md         # Performance optimization
-├── CUDA_ACCELERATION_GUIDE.md   # GPU acceleration
-├── MEMORY_OPTIMIZATION_GUIDE.md # Memory management
-├── DISTRIBUTED_TRAINING_GUIDE.md# Distributed training
-├── CI_CD_ARCHITECTURE.md        # CI/CD documentation
-├── CHANGELOG.md                 # Version history
+├── README.md                    # This file - documentation index
+├── user-guide/                 # User-facing documentation
+│   ├── demo.md                  # Interactive demo guide
+│   └── testing.md               # Testing documentation
+├── api/                         # API documentation
+│   └── reference.md             # Complete API reference
+├── development/                 # Development documentation
+│   ├── contributing.md          # Contribution guidelines
+│   └── changelog.md             # Version history
+├── advanced/                    # Advanced topics
+│   ├── performance.md           # Performance optimization
+│   ├── cuda-acceleration.md     # GPU acceleration
+│   ├── memory-optimization.md   # Memory management
+│   ├── distributed-training.md  # Distributed training
+│   ├── ci-cd-architecture.md    # CI/CD setup
+│   └── ci-cd-troubleshooting.md # CI/CD troubleshooting
+├── reports/                     # Generated reports
+│   ├── coverage-update.md       # Coverage reports
+│   ├── functional-coverage.md   # Functional test coverage
+│   ├── multi-agent-coverage.md  # Multi-agent test coverage
+│   └── test-execution-summary.md# Test execution results
 └── sphinx/                      # Sphinx documentation build
 ```
+
+## Documentation Categories
+
+### For Users
+- **[Demo Guide](user-guide/demo.md)** - Getting started with examples
+- **[API Reference](api/reference.md)** - Complete API documentation
+- **[Testing Guide](user-guide/testing.md)** - Running tests and validation
+
+### For Developers
+- **[Contributing Guide](development/contributing.md)** - Development workflow
+- **[Changelog](development/changelog.md)** - Project history
+- **[Performance Guide](advanced/performance.md)** - Optimization techniques
+
+### For Advanced Users
+- **[CUDA Acceleration](advanced/cuda-acceleration.md)** - GPU setup and usage
+- **[Memory Optimization](advanced/memory-optimization.md)** - Memory management
+- **[Distributed Training](advanced/distributed-training.md)** - Multi-GPU training
+- **[CI/CD Architecture](advanced/ci-cd-architecture.md)** - Development infrastructure
+
+### Project Reports
+- **[Coverage Reports](reports/)** - Test coverage analysis
+- **[Execution Summaries](reports/)** - Test run results
 
 ## Building Documentation
 
@@ -70,16 +73,20 @@ cd docs/sphinx
 make html
 ```
 
-### API Documentation
-API documentation is automatically generated from docstrings in the source code.
+The generated documentation will be available in `docs/sphinx/_build/html/`.
+
+### Local Development
+- All markdown files can be viewed directly in any markdown viewer
+- Cross-references use relative paths for portability
+- Documentation is organized by user journey and technical depth
 
 ## Contributing to Documentation
 
-We welcome documentation improvements! Areas that need attention:
+We welcome documentation improvements! See the [Contributing Guide](development/contributing.md) for details.
 
 ### High Priority
 - Tutorial and getting started guides
-- Example walkthroughs
+- Example walkthroughs  
 - API documentation completeness
 - Performance benchmarking results
 
@@ -89,25 +96,20 @@ We welcome documentation improvements! Areas that need attention:
 - Troubleshooting sections
 - FAQ compilation
 
-### Low Priority
-- Additional examples
-- Theoretical background
-- Research applications
-- Comparison with other frameworks
-
 ## Documentation Standards
 
 - **Clarity**: Write for users at different skill levels
 - **Accuracy**: Ensure code examples work and are tested
-- **Completeness**: Cover all public APIs and common use cases
+- **Organization**: Use the directory structure appropriately
 - **Maintenance**: Keep documentation in sync with code changes
+- **Naming**: Use kebab-case for file names (e.g., `memory-optimization.md`)
 
 ## Getting Help
 
-- **Issues**: Report documentation issues on GitHub
-- **Discussions**: Join community discussions
-- **Examples**: Check the examples/ directory for working code
+- **Issues**: Report documentation issues on [GitHub](https://github.com/fenilsonani/neural-network-from-scratch/issues)
+- **Examples**: Check the [examples/](../examples/) directory for working code
+- **API Questions**: See the [API Reference](api/reference.md)
 
 ---
 
-**Note**: This documentation is actively maintained. Please report any issues or suggestions for improvement.
+**Note**: This documentation follows a structured approach for better discoverability and maintenance.

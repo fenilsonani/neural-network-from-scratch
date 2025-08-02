@@ -202,10 +202,11 @@ Performance will improve as optimization work continues.
 
 ## Documentation
 
-- **API Reference**: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
-- **User Guide**: [docs/README.md](docs/README.md)
-- **Contributing**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
-- **Performance Guide**: [docs/PERFORMANCE_GUIDE.md](docs/PERFORMANCE_GUIDE.md)
+- **Documentation Index**: [docs/README.md](docs/README.md)
+- **API Reference**: [docs/api/reference.md](docs/api/reference.md)
+- **User Guide**: [docs/user-guide/demo.md](docs/user-guide/demo.md)
+- **Contributing**: [docs/development/contributing.md](docs/development/contributing.md)
+- **Performance Guide**: [docs/advanced/performance.md](docs/advanced/performance.md)
 
 ## Contributing
 
@@ -216,7 +217,7 @@ We welcome contributions! This project is particularly suitable for:
 - Better documentation and tutorials
 - Bug fixes and code quality improvements
 
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](docs/development/contributing.md) for guidelines.
 
 ## Educational Use
 

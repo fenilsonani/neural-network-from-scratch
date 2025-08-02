@@ -46,7 +46,7 @@ setup(
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     author="Fenil Sonani",
-    author_email="fenilsonani@gmail.com",
+    author_email="fenil@fenilsonani.com",
     url="https://github.com/fenilsonani/neural-network-from-scratch",
     project_urls={
         "Bug Reports": "https://github.com/fenilsonani/neural-network-from-scratch/issues",
