@@ -39,7 +39,7 @@ class TestPreNormTransformerConfig:
         assert config.num_layers == 6
         assert config.num_heads == 8
         assert config.d_ff == 2048
-        assert config.use_rope == True
+        assert config.use_rope is True
         assert config.normalization == "layernorm"
         assert config.activation == "gelu"
 
@@ -58,7 +58,7 @@ class TestPreNormTransformerConfig:
         assert config.num_heads == 12
         assert config.activation == "swiglu"
         assert config.normalization == "rmsnorm"
-        assert config.use_rope == False
+        assert config.use_rope is False
         assert config.head_dim == 64  # 768 // 12
 
     def test_invalid_config(self):
@@ -109,7 +109,7 @@ class TestRoPEMultiHeadAttention:
 
         # Check output shape
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
         # Check attention weights shape
         assert attn_weights is not None
@@ -173,7 +173,7 @@ class TestPreNormFeedForward:
         output = ffn(x)
 
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert not np.allclose(output.data, x.data)
 
     def test_swiglu_ffn(self):
@@ -194,7 +194,7 @@ class TestPreNormFeedForward:
         output = ffn(x)
 
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
     def test_relu_ffn(self):
         """Test FFN with ReLU activation."""
@@ -208,7 +208,7 @@ class TestPreNormFeedForward:
         output = ffn(x)
 
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
 
 class TestPreNormTransformerLayer:
@@ -226,7 +226,7 @@ class TestPreNormTransformerLayer:
         output = layer(x)
 
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert not np.allclose(output.data, x.data)
 
     def test_residual_connections(self):
@@ -308,7 +308,7 @@ class TestPreNormTransformer:
 
         logits = outputs["logits"]
         assert logits.shape == (batch_size, seq_len, 100)  # vocab_size
-        assert logits.requires_grad == True
+        assert logits.requires_grad is True
 
         last_hidden = outputs["last_hidden_state"]
         assert last_hidden.shape == (batch_size, seq_len, 64)  # d_model

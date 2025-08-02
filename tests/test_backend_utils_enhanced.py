@@ -28,7 +28,7 @@ class TestBackendUtilsEnhanced:
         self.original_backend = None
         try:
             self.original_backend = get_backend()
-        except:
+        except Exception:
             pass
 
     def teardown_method(self):
@@ -37,7 +37,7 @@ class TestBackendUtilsEnhanced:
         if self.original_backend:
             try:
                 set_backend(self.original_backend.name)
-            except:
+            except Exception:
                 pass
 
     def test_auto_select_backend_prefer_gpu_false(self):
@@ -380,7 +380,7 @@ class TestBackendUtilsEnhanced:
             try:
                 result = get_device_for_backend(None)
                 # If it doesn't raise an exception, that's good
-            except:
+            except Exception:
                 # If it does raise, that's also acceptable behavior
                 pass
 

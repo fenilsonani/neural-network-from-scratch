@@ -606,7 +606,7 @@ class TestSequential95Coverage:
             x_numpy = np.array([1.0], dtype=np.float32)
             output_numpy = seq.forward(x_numpy)
             assert np.all(np.isfinite(output_numpy))
-        except:
+        except Exception:
             # Modules might not support numpy input directly
             pass
 

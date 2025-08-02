@@ -106,8 +106,8 @@ class TestRotaryPositionalEmbedding:
         assert not np.allclose(k_rope.data, k.data)
 
         # Check gradients are set up
-        assert q_rope.requires_grad == True
-        assert k_rope.requires_grad == True
+        assert q_rope.requires_grad is True
+        assert k_rope.requires_grad is True
         assert q_rope._grad_fn is not None
         assert k_rope._grad_fn is not None
 
@@ -276,7 +276,7 @@ class TestSinusoidalPositionalEncoding:
         assert not np.allclose(result.data, x.data)
 
         # Check gradient setup
-        assert result.requires_grad == True
+        assert result.requires_grad is True
         assert result._grad_fn is not None
 
     def test_sinusoidal_pe_mathematical_properties(self):
@@ -318,7 +318,7 @@ class TestLearnedPositionalEmbedding:
         assert not np.allclose(result.data, x.data)
 
         # Check gradient setup
-        assert result.requires_grad == True
+        assert result.requires_grad is True
         assert result._grad_fn is not None
 
     def test_learned_pe_parameters(self):
@@ -327,7 +327,7 @@ class TestLearnedPositionalEmbedding:
 
         # Check embedding parameter exists
         assert hasattr(pe, "embedding")
-        assert pe.embedding.requires_grad == True
+        assert pe.embedding.requires_grad is True
         assert pe.embedding.data.shape == (128, 64)
 
         # Check parameter is included in module parameters

@@ -333,8 +333,6 @@ def register_backend(name: str, backend_class: type) -> None:
 
 def get_backend(name: Optional[str] = None) -> Backend:
     """Get a backend by name or return current backend."""
-    global _CURRENT_BACKEND
-
     if name is None:
         if _CURRENT_BACKEND is None:
             # Default to numpy backend
@@ -367,7 +365,7 @@ def available_backends() -> List[str]:
             backend = backend_class()
             if backend.is_available:
                 available.append(name)
-        except:
+        except Exception:
             pass
     return available
 

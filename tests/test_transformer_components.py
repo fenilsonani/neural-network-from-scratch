@@ -224,7 +224,7 @@ class TestMultiHeadAttention:
 
         # Output should have same shape as input
         assert output.shape == (batch_size, seq_len, d_model)
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
     def test_attention_shapes_consistency(self):
         """Test shape consistency across different inputs."""
@@ -257,7 +257,7 @@ class TestMultiHeadAttention:
 
         # Check that the forward pass works
         assert output.shape == (batch_size, seq_len, d_model)
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
         # Check that parameters exist and are learnable
         params = attention.parameters()
@@ -265,7 +265,7 @@ class TestMultiHeadAttention:
 
         # Verify all parameters require gradients
         for param in params.values():
-            assert param.requires_grad == True
+            assert param.requires_grad is True
 
         # Test that backward pass executes without errors
         try:
@@ -322,13 +322,13 @@ class TestLayerNormalization:
 
         # Check forward pass works
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
         # Check parameters exist
         assert hasattr(layer_norm, "gamma")
         assert hasattr(layer_norm, "beta")
-        assert layer_norm.gamma.requires_grad == True
-        assert layer_norm.beta.requires_grad == True
+        assert layer_norm.gamma.requires_grad is True
+        assert layer_norm.beta.requires_grad is True
 
         # Test backward pass executes without errors
         try:
@@ -349,7 +349,7 @@ class TestPositionalEncoding:
 
         assert pe.d_model == d_model
         assert pe.pe.shape == (max_len, d_model)
-        assert pe.pe.requires_grad == False
+        assert pe.pe.requires_grad is False
 
     def test_positional_encoding_properties(self):
         """Test mathematical properties of positional encoding."""
@@ -380,7 +380,7 @@ class TestPositionalEncoding:
 
         # Output should have same shape
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
         # Check that positional encoding was added
         expected = x.data + pe.pe.data[:seq_len][np.newaxis, :, :]
@@ -418,7 +418,7 @@ class TestTransformerBlock:
 
         # Output should have same shape as input
         assert output.shape == x.shape
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
     def test_transformer_block_residual_connections(self):
         """Test that residual connections work."""
@@ -446,7 +446,7 @@ class TestTransformerBlock:
 
         # Check forward pass works
         assert output.shape == (batch_size, seq_len, d_model)
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
         # Check that block has parameters
         params = block.parameters()
@@ -454,7 +454,7 @@ class TestTransformerBlock:
 
         # Verify parameters require gradients
         for param in params.values():
-            assert param.requires_grad == True
+            assert param.requires_grad is True
 
         # Test backward pass executes without errors
         try:
@@ -494,7 +494,7 @@ class TestTransformerIntegration:
 
         # Check shapes
         assert output.shape == (batch_size, seq_len, vocab_size)
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
     def test_multiple_transformer_blocks(self):
         """Test stacking multiple transformer blocks."""
@@ -513,7 +513,7 @@ class TestTransformerIntegration:
 
         # Final output should have same shape
         assert x.shape == (batch_size, seq_len, d_model)
-        assert x.requires_grad == True
+        assert x.requires_grad is True
 
     def test_attention_pattern_analysis(self):
         """Test attention pattern properties."""

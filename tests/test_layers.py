@@ -27,8 +27,8 @@ class TestLinearLayer:
         assert layer.out_features == 2
         assert layer.weight.shape == (3, 2)
         assert layer.bias.shape == (2,)
-        assert layer.weight.requires_grad == True
-        assert layer.bias.requires_grad == True
+        assert layer.weight.requires_grad is True
+        assert layer.bias.requires_grad is True
 
     def test_linear_forward(self):
         """Test linear layer forward pass."""
@@ -38,7 +38,7 @@ class TestLinearLayer:
         y = layer(x)
 
         assert y.shape == (2, 2)
-        assert y.requires_grad == True
+        assert y.requires_grad is True
 
     def test_linear_parameters(self):
         """Test parameter collection."""
@@ -77,7 +77,7 @@ class TestEmbeddingLayer:
         assert layer.vocab_size == 10
         assert layer.embed_dim == 4
         assert layer.weight.shape == (10, 4)
-        assert layer.weight.requires_grad == True
+        assert layer.weight.requires_grad is True
 
     def test_embedding_forward(self):
         """Test embedding forward pass."""
@@ -87,7 +87,7 @@ class TestEmbeddingLayer:
         embedded = layer(indices)
 
         assert embedded.shape == (2, 3, 3)
-        assert embedded.requires_grad == True
+        assert embedded.requires_grad is True
 
     def test_embedding_lookup(self):
         """Test embedding lookup correctness."""
@@ -156,7 +156,7 @@ class TestLayerIntegration:
         output = linear(pooled)  # (1, 2)
 
         assert output.shape == (1, 2)
-        assert output.requires_grad == True
+        assert output.requires_grad is True
 
     def test_multi_layer_gradients(self):
         """Test gradients through multiple layers."""

@@ -45,12 +45,12 @@ try:
 except ImportError:
     pass
 
-try:
-    from .jax_backend import JAXBackend
-
-    __all__.append("JAXBackend")
-except ImportError:
-    pass
+# JAX backend not implemented yet
+# try:
+#     from .jax_backend import JAXBackend
+#     __all__.append("JAXBackend")
+# except ImportError:
+#     pass
 
 # Import JIT backend for ultra-high performance
 try:

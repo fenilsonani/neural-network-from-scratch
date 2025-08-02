@@ -55,7 +55,7 @@ class TestJITBackendComprehensive:
         with patch("neural_arch.backends.jit_backend.NUMBA_AVAILABLE", True):
             backend = JITBackend()
             assert backend.name == "jit"
-            assert backend.is_available == True
+            assert backend.is_available is True
             assert backend.supports_gradients is False
 
     def test_availability_when_numba_unavailable(self):

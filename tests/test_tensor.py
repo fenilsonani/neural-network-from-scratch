@@ -37,7 +37,7 @@ class TestTensor:
 
         # With gradient requirement
         t4 = Tensor([1, 2, 3], requires_grad=True)
-        assert t4.requires_grad == True
+        assert t4.requires_grad is True
 
     def test_tensor_properties(self):
         """Test tensor properties."""
@@ -74,7 +74,7 @@ class TestTensorOperations:
         expected = np.array([[6, 8], [10, 12]])
 
         assert np.array_equal(c.data, expected)
-        assert c.requires_grad == True
+        assert c.requires_grad is True
 
         # Test gradients
         c.backward(np.ones_like(c.data))
@@ -93,7 +93,7 @@ class TestTensorOperations:
         expected = np.array([[2, 6], [12, 20]])
 
         assert np.array_equal(c.data, expected)
-        assert c.requires_grad == True
+        assert c.requires_grad is True
 
     def test_matrix_multiplication(self):
         """Test matrix multiplication."""
@@ -104,7 +104,7 @@ class TestTensorOperations:
         expected = np.array([[19, 22], [43, 50]])
 
         assert np.array_equal(c.data, expected)
-        assert c.requires_grad == True
+        assert c.requires_grad is True
 
     def test_relu_activation(self):
         """Test ReLU activation."""
@@ -113,7 +113,7 @@ class TestTensorOperations:
 
         expected = np.array([0, 0, 0, 1, 2])
         assert np.array_equal(y.data, expected)
-        assert y.requires_grad == True
+        assert y.requires_grad is True
 
     def test_softmax_activation(self):
         """Test softmax activation."""
@@ -130,7 +130,7 @@ class TestTensorOperations:
 
         # Check all values are positive
         assert np.all(y.data > 0)
-        assert y.requires_grad == True
+        assert y.requires_grad is True
 
 
 class TestGradientComputation:
@@ -238,7 +238,7 @@ class TestEdgeCases:
         b = Tensor([4, 5, 6], requires_grad=False)
 
         c = add(a, b)
-        assert c.requires_grad == False
+        assert c.requires_grad is False
 
         # Backward should not crash
         c.backward(np.ones_like(c.data))
@@ -249,7 +249,7 @@ class TestEdgeCases:
         b = Tensor([3, 4], requires_grad=False)
 
         c = add(a, b)
-        assert c.requires_grad == True
+        assert c.requires_grad is True
 
 
 def test_comprehensive_workflow():

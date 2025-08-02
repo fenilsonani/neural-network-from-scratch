@@ -39,7 +39,7 @@ class TestConfig:
         assert config.compute.dtype == "float32"
         assert config.compute.device == "cpu"
 
-        assert config.tensor.grad_enabled == True
+        assert config.tensor.grad_enabled is True
         assert config.tensor.grad_clip_value == 10.0
 
         assert config.optimizer.default_lr == 0.001

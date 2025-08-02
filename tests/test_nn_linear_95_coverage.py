@@ -29,7 +29,7 @@ class TestLinearLayer95Coverage:
         layer = Linear(10, 5)
         assert layer.in_features == 10
         assert layer.out_features == 5
-        assert layer.use_bias == True
+        assert layer.use_bias is True
         assert layer.weight.shape == (10, 5)
         assert layer.bias.shape == (5,)
         assert isinstance(layer.weight, Parameter)
@@ -39,7 +39,7 @@ class TestLinearLayer95Coverage:
         layer_no_bias = Linear(8, 4, bias=False)
         assert layer_no_bias.in_features == 8
         assert layer_no_bias.out_features == 4
-        assert layer_no_bias.use_bias == False
+        assert layer_no_bias.use_bias is False
         assert layer_no_bias.weight.shape == (8, 4)
         assert layer_no_bias.bias is None
 
@@ -326,19 +326,19 @@ class TestLinearLayer95Coverage:
         # Test with requires_grad=True input
         x_grad = Tensor(np.random.randn(2, 4).astype(np.float32), requires_grad=True)
         output_grad = layer.forward(x_grad)
-        assert output_grad.requires_grad == True
+        assert output_grad.requires_grad is True
 
         # Test with requires_grad=False input
         x_no_grad = Tensor(np.random.randn(2, 4).astype(np.float32), requires_grad=False)
         output_no_grad = layer.forward(x_no_grad)
         # Output should still require grad because layer parameters do
-        assert output_no_grad.requires_grad == True
+        assert output_no_grad.requires_grad is True
 
         # Test with parameters that don't require gradients
         layer.weight.requires_grad = False
         layer.bias.requires_grad = False
         output_no_param_grad = layer.forward(x_no_grad)
-        assert output_no_param_grad.requires_grad == False
+        assert output_no_param_grad.requires_grad is False
 
     def test_extreme_input_sizes(self):
         """Test with extreme input sizes and edge cases."""
@@ -488,7 +488,7 @@ class TestLinearLayer95Coverage:
         # Verify layer properties are maintained
         assert layer.in_features == 4
         assert layer.out_features == 3
-        assert layer.use_bias == True
+        assert layer.use_bias is True
 
     def test_edge_case_mathematical_operations(self):
         """Test edge cases in mathematical operations."""

@@ -117,7 +117,7 @@ class TestBoundaryConditions:
         try:
             result = matmul(x, y)
             assert result.shape == (0, 0)
-        except:
+        except Exception:
             pass  # May not be supported, that's ok
 
     def test_single_element_operations(self):
@@ -423,7 +423,7 @@ class TestOptimizerExtremes:
             optimizer.step()
             # If it doesn't crash, parameters should remain finite
             assert np.isfinite(params["w"].data[0])
-        except:
+        except Exception:
             # If it crashes, that's also acceptable behavior
             pass
 

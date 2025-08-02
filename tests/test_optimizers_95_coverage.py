@@ -37,8 +37,8 @@ class TestAdam95Coverage:
         assert optimizer.beta2 == 0.999  # default
         assert optimizer.eps == 1e-5  # default
         assert optimizer.weight_decay == 0.0  # default
-        assert optimizer.amsgrad == False  # default
-        assert optimizer.maximize == False  # default
+        assert optimizer.amsgrad is False  # default
+        assert optimizer.maximize is False  # default
 
         # Test custom parameters
         optimizer_custom = Adam(
@@ -56,8 +56,8 @@ class TestAdam95Coverage:
         assert optimizer_custom.beta2 == 0.99
         assert optimizer_custom.eps == 1e-8
         assert optimizer_custom.weight_decay == 0.01
-        assert optimizer_custom.amsgrad == True
-        assert optimizer_custom.maximize == True
+        assert optimizer_custom.amsgrad is True
+        assert optimizer_custom.maximize is True
 
     def test_adam_initialization_with_betas_tuple(self):
         """Test Adam initialization with PyTorch-style betas tuple."""

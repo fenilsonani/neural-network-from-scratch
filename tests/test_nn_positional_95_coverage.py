@@ -171,7 +171,7 @@ class TestSinusoidalPositionalEncoding95Coverage:
         x = Tensor(np.random.randn(2, 10, 64).astype(np.float32), requires_grad=True)
         output = pe.forward(x)
 
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert output._grad_fn is not None
 
     def test_sinusoidal_pe_with_dropout(self):
@@ -398,8 +398,8 @@ class TestRotaryPositionalEmbedding95Coverage:
 
         q_rot, k_rot = rope.forward(q, k)
 
-        assert q_rot.requires_grad == True
-        assert k_rot.requires_grad == True
+        assert q_rot.requires_grad is True
+        assert k_rot.requires_grad is True
         assert q_rot._grad_fn is not None
         assert k_rot._grad_fn is not None
 
@@ -513,7 +513,7 @@ class TestLearnedPositionalEmbedding95Coverage:
         x = Tensor(np.random.randn(2, 10, 64).astype(np.float32), requires_grad=True)
         output = learned_pe.forward(x)
 
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert output._grad_fn is not None
 
     def test_learned_pe_parameter_access(self):
@@ -522,7 +522,7 @@ class TestLearnedPositionalEmbedding95Coverage:
 
         # Test embedding parameter
         assert hasattr(learned_pe, "embedding")
-        assert learned_pe.embedding.requires_grad == True
+        assert learned_pe.embedding.requires_grad is True
         assert learned_pe.embedding.data.shape == (100, 64)
         assert "learned_pe.embedding" in learned_pe.embedding.name
 
@@ -653,7 +653,7 @@ class TestPositionalEncodingIntegration:
             x = Tensor(np.random.randn(2, 10, 32).astype(np.float32), requires_grad=True)
             output = module.forward(x)
 
-            assert output.requires_grad == True
+            assert output.requires_grad is True
             if hasattr(output, "_grad_fn"):
                 assert output._grad_fn is not None
 

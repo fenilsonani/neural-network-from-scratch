@@ -206,13 +206,13 @@ class TestMultiHeadAttention95Coverage:
         # Test with requires_grad=True
         x_grad = Tensor(np.random.randn(2, 10, 256).astype(np.float32), requires_grad=True)
         output_grad = attention.forward(x_grad)
-        assert output_grad.requires_grad == True
+        assert output_grad.requires_grad is True
 
         # Test with requires_grad=False
         x_no_grad = Tensor(np.random.randn(2, 10, 256).astype(np.float32), requires_grad=False)
         output_no_grad = attention.forward(x_no_grad)
         # Output should still require grad because layer parameters do
-        assert output_no_grad.requires_grad == True
+        assert output_no_grad.requires_grad is True
 
     def test_multihead_attention_numerical_stability(self):
         """Test numerical stability with extreme values."""

@@ -33,7 +33,7 @@ class TestLayerNorm95Coverage:
         ln = LayerNorm(128)
         assert ln.normalized_shape == 128
         assert ln.eps == 1e-5
-        assert ln.elementwise_affine == True
+        assert ln.elementwise_affine is True
         assert ln.weight.shape == (128,)
         assert ln.bias.shape == (128,)
         assert np.allclose(ln.weight.data, 1.0)
@@ -43,12 +43,12 @@ class TestLayerNorm95Coverage:
         ln_custom = LayerNorm(normalized_shape=256, eps=1e-8, elementwise_affine=True, bias=True)
         assert ln_custom.normalized_shape == 256
         assert ln_custom.eps == 1e-8
-        assert ln_custom.elementwise_affine == True
+        assert ln_custom.elementwise_affine is True
 
         # Test without affine transformation
         ln_no_affine = LayerNorm(64, elementwise_affine=False)
         assert ln_no_affine.normalized_shape == 64
-        assert ln_no_affine.elementwise_affine == False
+        assert ln_no_affine.elementwise_affine is False
         assert ln_no_affine.weight is None
         assert ln_no_affine.bias is None
 
@@ -147,7 +147,7 @@ class TestLayerNorm95Coverage:
         x = Tensor(np.random.randn(2, 4).astype(np.float32), requires_grad=True)
         output = ln.forward(x)
 
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert output._grad_fn is not None
 
     def test_layernorm_extra_repr(self):
@@ -169,7 +169,7 @@ class TestRMSNorm95Coverage:
         rms = RMSNorm(128)
         assert rms.normalized_shape == 128
         assert rms.eps == 1e-8  # Different default than LayerNorm
-        assert rms.elementwise_affine == True
+        assert rms.elementwise_affine is True
         assert rms.weight.shape == (128,)
         assert np.allclose(rms.weight.data, 1.0)
 
@@ -177,7 +177,7 @@ class TestRMSNorm95Coverage:
         rms_custom = RMSNorm(256, eps=1e-6, elementwise_affine=False)
         assert rms_custom.normalized_shape == 256
         assert rms_custom.eps == 1e-6
-        assert rms_custom.elementwise_affine == False
+        assert rms_custom.elementwise_affine is False
         assert rms_custom.weight is None
 
     def test_rmsnorm_initialization_validation(self):
@@ -252,8 +252,8 @@ class TestBatchNorm1d95Coverage:
         assert bn.num_features == 64
         assert bn.eps == 1e-5
         assert bn.momentum == 0.1
-        assert bn.affine == True
-        assert bn.track_running_stats == True
+        assert bn.affine is True
+        assert bn.track_running_stats is True
         assert bn.weight.shape == (64,)
         assert bn.bias.shape == (64,)
         assert bn.running_mean.shape == (64,)
@@ -267,8 +267,8 @@ class TestBatchNorm1d95Coverage:
         assert bn_custom.num_features == 128
         assert bn_custom.eps == 1e-3
         assert bn_custom.momentum == 0.2
-        assert bn_custom.affine == False
-        assert bn_custom.track_running_stats == False
+        assert bn_custom.affine is False
+        assert bn_custom.track_running_stats is False
         assert bn_custom.weight is None
         assert bn_custom.bias is None
         assert bn_custom.running_mean is None
@@ -290,7 +290,7 @@ class TestBatchNorm1d95Coverage:
     def test_batchnorm1d_training_mode(self):
         """Test BatchNorm1d in training mode."""
         bn = BatchNorm1d(32)
-        assert bn.training == True
+        assert bn.training is True
 
         # Test 2D input (N, C)
         x_2d = Tensor(np.random.randn(4, 32).astype(np.float32))
@@ -314,7 +314,7 @@ class TestBatchNorm1d95Coverage:
 
         # Switch to eval mode
         bn.eval()
-        assert bn.training == False
+        assert bn.training is False
 
         x_eval = Tensor(np.random.randn(2, 32).astype(np.float32))
         output_eval = bn.forward(x_eval)
@@ -327,20 +327,20 @@ class TestBatchNorm1d95Coverage:
         bn = BatchNorm1d(16)
 
         # Start in training
-        assert bn.training == True
+        assert bn.training is True
 
         # Switch to eval
         bn.eval()
-        assert bn.training == False
+        assert bn.training is False
 
         # Switch back to training
         bn.train()
-        assert bn.training == True
+        assert bn.training is True
 
         # Test chaining
         bn_chain = bn.train(False)
         assert bn_chain is bn
-        assert bn.training == False
+        assert bn.training is False
 
     def test_batchnorm1d_without_tracking(self):
         """Test BatchNorm1d without running stats tracking."""
@@ -459,7 +459,7 @@ class TestGroupNorm95Coverage:
         assert gn.num_groups == 4
         assert gn.num_channels == 32
         assert gn.eps == 1e-5
-        assert gn.affine == True
+        assert gn.affine is True
         assert gn.weight.shape == (32,)
         assert gn.bias.shape == (32,)
 
@@ -562,8 +562,8 @@ class TestInstanceNorm95Coverage:
         assert in_norm.num_features == 32
         assert in_norm.eps == 1e-5
         assert in_norm.momentum == 0.1
-        assert in_norm.affine == False  # Default is False for InstanceNorm
-        assert in_norm.track_running_stats == False  # Default is False
+        assert in_norm.affine is False  # Default is False for InstanceNorm
+        assert in_norm.track_running_stats is False  # Default is False
         assert in_norm.weight is None
         assert in_norm.bias is None
 
@@ -685,7 +685,7 @@ class TestNormalizationIntegration:
                 x = Tensor(np.random.randn(2, 10, 32).astype(np.float32), requires_grad=True)
 
             output = layer.forward(x)
-            assert output.requires_grad == True
+            assert output.requires_grad is True
 
     def test_normalization_numerical_stability(self):
         """Test numerical stability across normalization layers."""

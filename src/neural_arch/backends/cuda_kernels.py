@@ -5,9 +5,8 @@ that can achieve 5-10x speedup over standard implementations.
 """
 
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
-import numpy as np
 
 try:
     import cupy as cp
@@ -35,21 +34,21 @@ void flash_attention_kernel(
     int head_idx = blockIdx.y;
     int block_idx = blockIdx.z;
     int tid = threadIdx.x;
-    
+
     // Shared memory for blocks
     extern __shared__ float sdata[];
     float* s_Q = sdata;
     float* s_K = s_Q + block_size * head_dim;
     float* s_V = s_K + block_size * head_dim;
     float* s_S = s_V + block_size * head_dim;
-    
+
     // Global indices
-    int q_offset = batch_idx * num_heads * seq_len * head_dim + 
+    int q_offset = batch_idx * num_heads * seq_len * head_dim +
                    head_idx * seq_len * head_dim;
     int k_offset = q_offset;
     int v_offset = q_offset;
     int o_offset = q_offset;
-    
+
     // Load Q block into shared memory
     int q_start = block_idx * block_size;
     for (int i = tid; i < block_size * head_dim; i += blockDim.x) {
@@ -62,17 +61,17 @@ void flash_attention_kernel(
             s_Q[i] = 0.0f;
         }
     }
-    
+
     __syncthreads();
-    
+
     // Initialize output accumulators
     float local_max = -INFINITY;
     float local_sum = 0.0f;
-    
+
     // Process K,V blocks
     for (int kv_block = 0; kv_block < (seq_len + block_size - 1) / block_size; kv_block++) {
         int k_start = kv_block * block_size;
-        
+
         // Load K block
         for (int i = tid; i < block_size * head_dim; i += blockDim.x) {
             int row = i / head_dim;
@@ -84,7 +83,7 @@ void flash_attention_kernel(
                 s_K[i] = 0.0f;
             }
         }
-        
+
         // Load V block
         for (int i = tid; i < block_size * head_dim; i += blockDim.x) {
             int row = i / head_dim;
@@ -96,28 +95,28 @@ void flash_attention_kernel(
                 s_V[i] = 0.0f;
             }
         }
-        
+
         __syncthreads();
-        
+
         // Compute attention scores S = Q @ K^T
         for (int i = tid; i < block_size * block_size; i += blockDim.x) {
             int q_row = i / block_size;
             int k_row = i % block_size;
-            
+
             float score = 0.0f;
             for (int d = 0; d < head_dim; d++) {
                 score += s_Q[q_row * head_dim + d] * s_K[k_row * head_dim + d];
             }
             s_S[i] = score * scale;
         }
-        
+
         __syncthreads();
-        
+
         // Apply softmax and accumulate
         // (Simplified - full implementation would include numerical stability)
         for (int q_row = 0; q_row < block_size; q_row++) {
             if (q_start + q_row >= seq_len) break;
-            
+
             // Find max for numerical stability
             float row_max = -INFINITY;
             for (int k_row = 0; k_row < block_size; k_row++) {
@@ -125,7 +124,7 @@ void flash_attention_kernel(
                     row_max = fmaxf(row_max, s_S[q_row * block_size + k_row]);
                 }
             }
-            
+
             // Compute exp and sum
             float row_sum = 0.0f;
             for (int k_row = 0; k_row < block_size; k_row++) {
@@ -134,17 +133,17 @@ void flash_attention_kernel(
                     row_sum += s_S[q_row * block_size + k_row];
                 }
             }
-            
+
             // Normalize and accumulate output
             for (int d = tid; d < head_dim; d += blockDim.x) {
                 float acc = 0.0f;
                 for (int k_row = 0; k_row < block_size; k_row++) {
                     if (k_start + k_row < seq_len) {
-                        acc += (s_S[q_row * block_size + k_row] / row_sum) * 
+                        acc += (s_S[q_row * block_size + k_row] / row_sum) *
                                s_V[k_row * head_dim + d];
                     }
                 }
-                
+
                 int out_idx = o_offset + (q_start + q_row) * head_dim + d;
                 if (kv_block == 0) {
                     O[out_idx] = acc;
@@ -153,7 +152,7 @@ void flash_attention_kernel(
                 }
             }
         }
-        
+
         __syncthreads();
     }
 }
@@ -173,7 +172,7 @@ void gelu_forward_kernel(const float* input, float* output, int size) {
 }
 
 extern "C" __global__
-void gelu_backward_kernel(const float* grad_output, const float* input, 
+void gelu_backward_kernel(const float* grad_output, const float* input,
                          float* grad_input, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
@@ -182,11 +181,11 @@ void gelu_backward_kernel(const float* grad_output, const float* input,
         float inner = sqrt_2_over_pi * (x + 0.044715f * x * x * x);
         float tanh_inner = tanhf(inner);
         float sech_squared = 1.0f - tanh_inner * tanh_inner;
-        
+
         float grad_inner = sqrt_2_over_pi * (1.0f + 3.0f * 0.044715f * x * x);
         float grad_tanh = 0.5f * x * sech_squared * grad_inner;
         float grad_linear = 0.5f * (1.0f + tanh_inner);
-        
+
         grad_input[idx] = grad_output[idx] * (grad_linear + grad_tanh);
     }
 }
@@ -202,37 +201,37 @@ void fused_linear_gelu_kernel(
     int batch_idx = blockIdx.x;
     int out_idx = blockIdx.y * blockDim.y + threadIdx.y;
     int tid = threadIdx.x;
-    
+
     if (batch_idx >= batch_size || out_idx >= out_features) return;
-    
+
     // Shared memory for reduction
     extern __shared__ float sdata[];
-    
+
     // Compute linear transformation with reduction
     float sum = 0.0f;
     for (int i = tid; i < in_features; i += blockDim.x) {
         sum += input[batch_idx * in_features + i] * weight[out_idx * in_features + i];
     }
-    
+
     // Reduce within warp
     for (int offset = warpSize / 2; offset > 0; offset /= 2) {
         sum += __shfl_down_sync(0xffffffff, sum, offset);
     }
-    
+
     // Store to shared memory
     if (tid % warpSize == 0) {
         sdata[tid / warpSize] = sum;
     }
-    
+
     __syncthreads();
-    
+
     // Final reduction
     if (tid == 0) {
         float total = bias[out_idx];
         for (int i = 0; i < (blockDim.x + warpSize - 1) / warpSize; i++) {
             total += sdata[i];
         }
-        
+
         // Apply GELU
         float sqrt_2_over_pi = 0.7978845608f;
         float inner = sqrt_2_over_pi * (total + 0.044715f * total * total * total);
@@ -251,60 +250,60 @@ void layernorm_forward_kernel(
 ) {
     int batch_idx = blockIdx.x;
     int tid = threadIdx.x;
-    
+
     if (batch_idx >= batch_size) return;
-    
+
     extern __shared__ float sdata[];
     float* s_mean = sdata;
     float* s_var = sdata + blockDim.x;
-    
+
     // Compute mean
     float sum = 0.0f;
     for (int i = tid; i < hidden_size; i += blockDim.x) {
         sum += input[batch_idx * hidden_size + i];
     }
-    
+
     // Reduce for mean
     s_mean[tid] = sum;
     __syncthreads();
-    
+
     for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
         if (tid < stride) {
             s_mean[tid] += s_mean[tid + stride];
         }
         __syncthreads();
     }
-    
+
     float batch_mean = s_mean[0] / hidden_size;
     if (tid == 0) {
         mean[batch_idx] = batch_mean;
     }
-    
+
     // Compute variance
     float var_sum = 0.0f;
     for (int i = tid; i < hidden_size; i += blockDim.x) {
         float diff = input[batch_idx * hidden_size + i] - batch_mean;
         var_sum += diff * diff;
     }
-    
+
     // Reduce for variance
     s_var[tid] = var_sum;
     __syncthreads();
-    
+
     for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
         if (tid < stride) {
             s_var[tid] += s_var[tid + stride];
         }
         __syncthreads();
     }
-    
+
     float batch_var = s_var[0] / hidden_size;
     float batch_rstd = rsqrtf(batch_var + eps);
-    
+
     if (tid == 0) {
         rstd[batch_idx] = batch_rstd;
     }
-    
+
     // Apply normalization
     for (int i = tid; i < hidden_size; i += blockDim.x) {
         float normalized = (input[batch_idx * hidden_size + i] - batch_mean) * batch_rstd;

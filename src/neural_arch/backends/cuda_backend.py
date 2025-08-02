@@ -16,13 +16,7 @@ except ImportError:
 
 # Import custom CUDA kernels
 try:
-    from .cuda_kernels import (
-        cuda_flash_attention,
-        cuda_fused_linear_gelu,
-        cuda_gelu,
-        cuda_layernorm,
-        get_cuda_kernel_manager,
-    )
+    from .cuda_kernels import get_cuda_kernel_manager
 
     CUDA_KERNELS_AVAILABLE = True
 except ImportError:
@@ -42,9 +36,9 @@ class CudaBackend(Backend):
             try:
                 self._kernel_manager = get_cuda_kernel_manager()
                 if self._kernel_manager.is_available():
-                    print(f"✅ Custom CUDA kernels initialized")
+                    print("✅ Custom CUDA kernels initialized")
                 else:
-                    print(f"⚠️ Custom CUDA kernels unavailable")
+                    print("⚠️ Custom CUDA kernels unavailable")
             except Exception as e:
                 print(f"⚠️ Failed to initialize custom CUDA kernels: {e}")
                 self._kernel_manager = None
@@ -61,7 +55,7 @@ class CudaBackend(Backend):
             # Test if CUDA is available
             cp.cuda.Device(0).compute_capability
             return True
-        except:
+        except Exception:
             return False
 
     @property
@@ -266,7 +260,7 @@ class CudaBackend(Backend):
             else:
                 try:
                     device_id = int(device.split(":")[1])
-                except:
+                except (ValueError, IndexError):
                     device_id = 0
 
             # Move to specified GPU

@@ -26,7 +26,7 @@ def benchmark_command(args, config):
 def info_command(args, config):
     """Info command implementation."""
     print("Neural Architecture System Information")
-    print(f"Version: 2.0.0")
+    print("Version: 2.0.0")
     print(f"Configuration: {config}")
     return 0
 

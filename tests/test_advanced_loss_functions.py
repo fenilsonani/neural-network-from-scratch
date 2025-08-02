@@ -74,7 +74,7 @@ class TestFocalLoss(TestAdvancedLossFunctions):
         # Test with default parameters
         loss = focal_loss(predictions, targets, alpha=1.0, gamma=2.0)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()  # Scalar loss
         assert loss.data >= 0.0  # Loss should be non-negative
 
@@ -152,7 +152,7 @@ class TestLabelSmoothingCrossEntropy(TestAdvancedLossFunctions):
 
         loss = label_smoothing_cross_entropy(predictions, targets, smoothing=0.1)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()
         assert loss.data >= 0.0
 
@@ -204,7 +204,7 @@ class TestHuberLoss(TestAdvancedLossFunctions):
 
         loss = huber_loss(predictions, targets, delta=1.0)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()
         assert loss.data >= 0.0
 
@@ -268,7 +268,7 @@ class TestKLDivergenceLoss(TestAdvancedLossFunctions):
 
         loss = kl_divergence_loss(predictions, targets)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()
         assert loss.data >= 0.0  # KL divergence is non-negative
 
@@ -322,7 +322,7 @@ class TestCosineEmbeddingLoss(TestAdvancedLossFunctions):
 
         loss = cosine_embedding_loss(input1, input2, target, margin=0.5)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()
         assert loss.data >= 0.0
 
@@ -380,7 +380,7 @@ class TestTripletLoss(TestAdvancedLossFunctions):
 
         loss = triplet_loss(anchor, positive, negative, margin=1.0)
 
-        assert loss.requires_grad == True
+        assert loss.requires_grad is True
         assert loss.shape == ()
         assert loss.data >= 0.0
 

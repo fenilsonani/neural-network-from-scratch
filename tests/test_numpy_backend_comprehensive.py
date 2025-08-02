@@ -25,8 +25,8 @@ class TestNumpyBackendComprehensive:
     def test_backend_properties(self):
         """Test backend properties."""
         assert self.backend.name == "numpy"
-        assert self.backend.is_available == True
-        assert self.backend.supports_gradients == False
+        assert self.backend.is_available is True
+        assert self.backend.supports_gradients is False
 
     def test_backend_device_methods(self):
         """Test device-related methods."""

@@ -54,7 +54,7 @@ class DataParallel(Module):
                 import cupy as cp
 
                 device_ids = list(range(cp.cuda.runtime.getDeviceCount()))
-            except:
+            except Exception:
                 device_ids = [0]  # Fallback to single device
 
         self.device_ids = device_ids

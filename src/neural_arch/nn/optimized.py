@@ -88,7 +88,7 @@ class OptimizedLinear(Module):
         self._cpu_backend = get_backend("numpy")
         try:
             self._jit_backend = get_backend("jit") if enable_jit else None
-        except:
+        except Exception:
             self._jit_backend = None
             logger.debug("JIT backend not available, falling back to standard operations")
 
@@ -334,7 +334,7 @@ class OptimizedGELU(Module):
 
         try:
             self._jit_backend = get_backend("jit") if enable_jit else None
-        except:
+        except Exception:
             self._jit_backend = None
 
     def forward(self, x: Tensor) -> Tensor:

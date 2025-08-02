@@ -32,7 +32,7 @@ class TestLionOptimizer:
         assert optimizer.beta1 == 0.9
         assert optimizer.beta2 == 0.99
         assert optimizer.weight_decay == 0.0
-        assert optimizer.maximize == False
+        assert optimizer.maximize is False
 
         # Check state initialization
         assert len(optimizer.state) == 2
@@ -55,7 +55,7 @@ class TestLionOptimizer:
         assert optimizer.beta1 == 0.95
         assert optimizer.beta2 == 0.999
         assert optimizer.weight_decay == 0.01
-        assert optimizer.maximize == True
+        assert optimizer.maximize is True
 
     def test_lion_initialization_with_betas_tuple(self):
         """Test Lion optimizer initialization with PyTorch-style betas tuple."""

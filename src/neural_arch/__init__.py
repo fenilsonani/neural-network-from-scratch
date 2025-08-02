@@ -70,6 +70,16 @@ from .nn import (
 # Optimizers
 from .optim import SGD, Adam, AdamW
 
+# Exceptions
+from .exceptions import (
+    DeviceError,
+    DTypeError,
+    GradientError,
+    NeuralArchError,
+    ShapeError,
+    TensorError,
+)
+
 # Import optimization configuration system
 try:
     from .optimization_config import configure
@@ -80,17 +90,12 @@ try:
 except ImportError:
     # Optimization config not available
     _optimization_config_available = False
-from .exceptions import (
-    DeviceError,
-    DTypeError,
-    GradientError,
-    NeuralArchError,
-    ShapeError,
-    TensorError,
-)
 
 # Backward compatibility utilities
 from .utils import create_text_vocab, propagate_gradients, text_to_sequences
+
+# CLI
+from .cli import main as cli_main
 
 # Set up enterprise-grade public API
 __all__ = [
@@ -178,9 +183,6 @@ if not logger.handlers:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.WARNING)  # Default to WARNING level
-
-# Expose CLI for programmatic access
-from .cli import main as cli_main
 
 
 def run_cli(*args):

@@ -37,7 +37,7 @@ class MPSBackend(Backend):
             # Test if we can create an array on GPU
             test = mx.array([1.0])
             return True
-        except:
+        except Exception:
             return False
 
     @property

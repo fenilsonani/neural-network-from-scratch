@@ -30,7 +30,7 @@ class TestEmbedding95Coverage:
         assert embedding.embed_dim == embed_dim
         assert embedding.weight.shape == (vocab_size, embed_dim)
         assert isinstance(embedding.weight, Parameter)
-        assert embedding.weight.requires_grad == True
+        assert embedding.weight.requires_grad is True
 
         # Test with custom name
         custom_name = "custom_embedding"
@@ -190,11 +190,11 @@ class TestEmbedding95Coverage:
         output = embedding.forward(indices)
 
         # Output should require gradients because weight does
-        assert output.requires_grad == True
+        assert output.requires_grad is True
         assert hasattr(output, "_backward")
 
         # Test gradient setup
-        assert embedding.weight.requires_grad == True
+        assert embedding.weight.requires_grad is True
 
     def test_embedding_gradient_computation_disabled(self):
         """Test embedding when gradients are disabled."""
@@ -208,7 +208,7 @@ class TestEmbedding95Coverage:
         output = embedding.forward(indices)
 
         # Output should not require gradients
-        assert output.requires_grad == False
+        assert output.requires_grad is False
         assert not hasattr(output, "_backward")
 
     def test_embedding_call_interface(self):
@@ -331,7 +331,7 @@ class TestEmbedding95Coverage:
         assert hasattr(embedding, "weight")
         assert isinstance(embedding.weight, Parameter)
         assert embedding.weight.data.shape == (vocab_size, embed_dim)
-        assert embedding.weight.requires_grad == True
+        assert embedding.weight.requires_grad is True
 
         # Test parameter name
         assert ".weight" in embedding.weight.name

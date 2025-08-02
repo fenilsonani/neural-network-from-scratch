@@ -100,28 +100,28 @@ def print_available_devices():
     caps = get_device_capabilities()
 
     # CPU info
-    print(f"CPU:")
+    print("CPU:")
     print(f"  Architecture: {caps['cpu']['architecture']}")
     print(f"  Available: {caps['cpu']['available']}")
 
     # CUDA info
     if caps["cuda"]["available"]:
-        print(f"\nCUDA:")
-        print(f"  Available: True")
+        print("\nCUDA:")
+        print("  Available: True")
         for device in caps["cuda"]["devices"]:
             print(f"  Device {device['index']}: {device['name']}")
             print(f"    Memory: {device['memory'] / 1e9:.1f} GB")
             print(f"    Compute Capability: {device['compute_capability']}")
     else:
-        print(f"\nCUDA: Not available")
+        print("\nCUDA: Not available")
 
     # MPS info
     if caps["mps"]["available"]:
-        print(f"\nMPS (Metal Performance Shaders):")
-        print(f"  Available: True")
+        print("\nMPS (Metal Performance Shaders):")
+        print("  Available: True")
         print(f"  Unified Memory: {caps['mps']['unified_memory']}")
     else:
-        print(f"\nMPS: Not available")
+        print("\nMPS: Not available")
 
     # Available backends
     print(f"\nAvailable Backends: {', '.join(available_backends())}")

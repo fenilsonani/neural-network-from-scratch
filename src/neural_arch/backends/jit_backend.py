@@ -10,13 +10,15 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 
 try:
-    from numba import cuda, jit, prange, types
-    from numba.core import errors
+    from numba import jit, prange
 
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
-    jit = lambda *args, **kwargs: lambda func: func  # No-op decorator
+
+    def jit(*args, **kwargs):
+        return lambda func: func  # No-op decorator
+    
     prange = range
 
 from .backend import Backend, register_backend
@@ -36,8 +38,8 @@ def jit_matrix_multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     for i in prange(m):
         for j in prange(n):
-            for l in range(k):
-                result[i, j] += a[i, l] * b[l, j]
+            for idx in range(k):
+                result[i, j] += a[i, idx] * b[idx, j]
 
     return result
 
@@ -54,8 +56,8 @@ def jit_batched_matrix_multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     for batch in prange(batch_size):
         for i in prange(m):
             for j in prange(n):
-                for l in range(k):
-                    result[batch, i, j] += a[batch, i, l] * b[batch, l, j]
+                for length in range(k):
+                    result[batch, i, j] += a[batch, i, length] * b[batch, length, j]
 
     return result
 

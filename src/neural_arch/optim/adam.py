@@ -154,7 +154,7 @@ class Adam(Optimizer):
                 mp_manager = get_mixed_precision_manager()
                 if mp_manager.config.enabled:
                     return mp_manager.scaler.step(self)
-            except:
+            except Exception:
                 pass
 
             # Fallback to normal step
