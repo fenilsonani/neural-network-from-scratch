@@ -4,6 +4,7 @@ import logging
 import weakref
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -110,7 +111,9 @@ class Tensor:
         self._dependents: List[weakref.ref] = []
 
         logger.debug(
-            f"Created tensor {self._name} with shape {self.shape} on {self._device} using {self._backend.name} backend")
+            f"Created tensor {self._name} with shape {self.shape} on {self._device} "
+            f"using {self._backend.name} backend"
+        )
 
     def _get_backend_for_device(self, device: Device) -> Backend:
         """Get appropriate backend for device with performance-based selection."""
