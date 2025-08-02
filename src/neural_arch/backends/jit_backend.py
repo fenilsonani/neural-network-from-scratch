@@ -18,7 +18,7 @@ except ImportError:
 
     def jit(*args, **kwargs):
         return lambda func: func  # No-op decorator
-    
+
     prange = range
 
 from .backend import Backend, register_backend
