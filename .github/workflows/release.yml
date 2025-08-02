@@ -345,7 +345,7 @@ jobs:
         path: .
     
     - name: 🏷️ Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ needs.pre-release-validation.outputs.version }}
         name: Neural Architecture v${{ needs.pre-release-validation.outputs.version }}
