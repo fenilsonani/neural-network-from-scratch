@@ -1,0 +1,768 @@
+name: Security Scanning & Compliance
+
+on:
+  push:
+    branches: [ main, develop, 'release/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security scans daily at 1 AM UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - comprehensive
+          - sast-only
+          - dependency-only
+          - secrets-only
+      create_sarif:
+        description: 'Generate SARIF reports for GitHub Security tab'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/src
+  NEURAL_ARCH_LOG_LEVEL: ERROR
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # STATIC APPLICATION SECURITY TESTING (SAST)
+  # ============================================================================
+  
+  sast-analysis:
+    name: "🔍 Static Application Security Testing"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install security analysis tools
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install bandit[toml] semgrep safety pip-audit
+          pip install -e .
+          
+      - name: Run Bandit SAST scan
+        run: |
+          echo "🔍 Running Bandit static security analysis..."
+          mkdir -p security-reports
+          
+          # Comprehensive Bandit scan
+          bandit -r src/ \
+            -f json -o security-reports/bandit-results.json \
+            --severity-level all --confidence-level all || true
+            
+          # Generate SARIF format for GitHub Security tab
+          bandit -r src/ \
+            -f sarif -o security-reports/bandit-results.sarif \
+            --severity-level medium --confidence-level medium || true
+            
+          # Human-readable report
+          bandit -r src/ \
+            --severity-level medium --confidence-level medium
+            
+      - name: Run Semgrep SAST scan
+        run: |
+          echo "🔍 Running Semgrep security analysis..."
+          
+          # Install Semgrep
+          pip install semgrep
+          
+          # Run comprehensive security rule set
+          semgrep --config=auto src/ \
+            --json --output=security-reports/semgrep-results.json || true
+            
+          # Generate SARIF for GitHub Security
+          semgrep --config=auto src/ \
+            --sarif --output=security-reports/semgrep-results.sarif || true
+            
+          # Show summary
+          semgrep --config=auto src/ --quiet || true
+          
+      - name: Python-specific security checks
+        run: |
+          echo "🐍 Running Python-specific security checks..."
+          
+          # Check for common Python security issues
+          python -c "
+          import ast
+          import os
+          
+          security_issues = []
+          
+          for root, dirs, files in os.walk('src'):
+              for file in files:
+                  if file.endswith('.py'):
+                      filepath = os.path.join(root, file)
+                      try:
+                          with open(filepath, 'r', encoding='utf-8') as f:
+                              content = f.read()
+                              tree = ast.parse(content)
+                              
+                          # Check for dangerous functions
+                          for node in ast.walk(tree):
+                              if isinstance(node, ast.Call):
+                                  if isinstance(node.func, ast.Name):
+                                      if node.func.id in ['eval', 'exec', 'compile']:
+                                          security_issues.append(f'{filepath}:{node.lineno} - Dangerous function: {node.func.id}')
+                                      elif node.func.id == 'open' and len(node.args) > 1:
+                                          # Check for potentially dangerous file modes
+                                          if isinstance(node.args[1], ast.Str) and 'w' in node.args[1].s:
+                                              security_issues.append(f'{filepath}:{node.lineno} - File write operation')
+                                              
+                      except Exception as e:
+                          print(f'Error parsing {filepath}: {e}')
+          
+          print(f'Python security analysis: {len(security_issues)} issues found')
+          for issue in security_issues:
+              print(f'  ⚠️ {issue}')
+          " > security-reports/python-security-analysis.log
+          
+      - name: Upload SAST results to GitHub Security
+        if: github.event.inputs.create_sarif != 'false'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security-reports/
+          category: sast-analysis
+          
+      - name: Upload SAST reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: sast-security-reports
+          path: security-reports/
+          retention-days: 90
+
+  # ============================================================================
+  # DEPENDENCY VULNERABILITY SCANNING
+  # ============================================================================
+  
+  dependency-scan:
+    name: "📦 Dependency Vulnerability Scanning"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependency scanning tools
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install safety pip-audit cyclonedx-bom osv-scanner
+          pip install -e .
+          
+      - name: Generate Software Bill of Materials (SBOM)
+        run: |
+          echo "📋 Generating Software Bill of Materials..."
+          mkdir -p security-reports
+          
+          # Generate SBOM in multiple formats
+          cyclonedx-py --output-format json --output-file security-reports/sbom.json . || true
+          cyclonedx-py --output-format xml --output-file security-reports/sbom.xml . || true
+          
+          # Generate requirements file with versions
+          pip freeze > security-reports/requirements-frozen.txt
+          
+      - name: Safety vulnerability scan
+        run: |
+          echo "🔒 Running Safety vulnerability scan..."
+          
+          # Comprehensive Safety scan
+          safety check --json --output security-reports/safety-results.json || true
+          safety check --full-report > security-reports/safety-full-report.txt || true
+          
+          # Brief summary
+          safety check --short-report || echo "Safety scan completed with findings"
+          
+      - name: pip-audit vulnerability scan
+        run: |
+          echo "🔍 Running pip-audit vulnerability scan..."
+          
+          # pip-audit scan with detailed output
+          pip-audit --format=json --output=security-reports/pip-audit-results.json --desc || true
+          pip-audit --format=cyclonedx-json --output=security-reports/pip-audit-sbom.json || true
+          
+          # Human readable report
+          pip-audit --desc || echo "pip-audit scan completed with findings"
+          
+      - name: OSV vulnerability scanning
+        run: |
+          echo "🔍 Running OSV vulnerability scanning..."
+          
+          # Install osv-scanner
+          curl -sSfL https://raw.githubusercontent.com/google/osv-scanner/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Scan using OSV database
+          osv-scanner --format json --output security-reports/osv-results.json . || true
+          osv-scanner . || echo "OSV scan completed with findings"
+          
+      - name: Analyze dependency vulnerabilities
+        run: |
+          echo "📊 Analyzing dependency vulnerability results..."
+          
+          python -c "
+          import json
+          import os
+          from pathlib import Path
+          
+          reports_dir = Path('security-reports')
+          
+          # Initialize counters
+          total_vulnerabilities = 0
+          critical_count = 0
+          high_count = 0
+          medium_count = 0
+          low_count = 0
+          
+          # Analyze Safety results
+          safety_file = reports_dir / 'safety-results.json'
+          if safety_file.exists():
+              try:
+                  with open(safety_file) as f:
+                      safety_data = json.load(f)
+                  vulnerabilities = safety_data.get('vulnerabilities', [])
+                  total_vulnerabilities += len(vulnerabilities)
+                  print(f'Safety found {len(vulnerabilities)} vulnerabilities')
+              except Exception as e:
+                  print(f'Error reading Safety results: {e}')
+          
+          # Analyze pip-audit results
+          pip_audit_file = reports_dir / 'pip-audit-results.json'
+          if pip_audit_file.exists():
+              try:
+                  with open(pip_audit_file) as f:
+                      pip_audit_data = json.load(f)
+                  vulnerabilities = pip_audit_data.get('vulnerabilities', [])
+                  total_vulnerabilities += len(vulnerabilities)
+                  print(f'pip-audit found {len(vulnerabilities)} vulnerabilities')
+              except Exception as e:
+                  print(f'Error reading pip-audit results: {e}')
+          
+          print(f'\\nTotal vulnerabilities found: {total_vulnerabilities}')
+          
+          # Create summary report
+          summary = {
+              'total_vulnerabilities': total_vulnerabilities,
+              'scan_timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
+              'tools_used': ['safety', 'pip-audit', 'osv-scanner'],
+              'sbom_generated': True
+          }
+          
+          with open(reports_dir / 'vulnerability-summary.json', 'w') as f:
+              json.dump(summary, f, indent=2)
+              
+          if total_vulnerabilities > 0:
+              print(f'⚠️ {total_vulnerabilities} vulnerabilities detected - review required')
+          else:
+              print('✅ No vulnerabilities detected in dependencies')
+          "
+          
+      - name: Upload dependency scan results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-security-reports
+          path: security-reports/
+          retention-days: 90
+
+  # ============================================================================
+  # SECRETS DETECTION SCANNING
+  # ============================================================================
+  
+  secrets-scan:
+    name: "🔑 Secrets Detection Scanning" 
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive secret scanning
+          
+      - name: Install secrets detection tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install detect-secrets truffleHog3
+          
+          # Install gitleaks
+          wget -O gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks.tar.gz
+          sudo mv gitleaks /usr/local/bin/
+          
+      - name: Run detect-secrets scan
+        run: |
+          echo "🔍 Running detect-secrets scan..."
+          mkdir -p security-reports
+          
+          # Update baseline if needed
+          detect-secrets scan --update .secrets.baseline || detect-secrets scan --baseline .secrets.baseline
+          
+          # Generate audit report
+          detect-secrets audit .secrets.baseline --report > security-reports/detect-secrets-report.json || true
+          
+          echo "✅ detect-secrets scan completed"
+          
+      - name: Run Gitleaks scan
+        run: |
+          echo "🔍 Running Gitleaks secret scanning..."
+          
+          # Scan repository for secrets
+          gitleaks detect --report-format json --report-path security-reports/gitleaks-results.json || true
+          gitleaks detect --report-format sarif --report-path security-reports/gitleaks-results.sarif || true
+          
+          # Show summary
+          gitleaks detect || echo "Gitleaks scan completed"
+          
+          echo "✅ Gitleaks scan completed"
+          
+      - name: Run TruffleHog scan
+        run: |
+          echo "🔍 Running TruffleHog secret scanning..."
+          
+          # Scan with TruffleHog
+          trufflehog3 --format json --output security-reports/trufflehog-results.json . || true
+          trufflehog3 . || echo "TruffleHog scan completed"
+          
+          echo "✅ TruffleHog scan completed"
+          
+      - name: Analyze secrets scan results
+        run: |
+          echo "📊 Analyzing secrets scan results..."
+          
+          python -c "
+          import json
+          import os
+          from pathlib import Path
+          
+          reports_dir = Path('security-reports')
+          
+          total_secrets = 0
+          tools_results = {}
+          
+          # Check Gitleaks results
+          gitleaks_file = reports_dir / 'gitleaks-results.json'
+          if gitleaks_file.exists() and gitleaks_file.stat().st_size > 0:
+              try:
+                  with open(gitleaks_file) as f:
+                      gitleaks_data = json.load(f)
+                  if isinstance(gitleaks_data, list):
+                      gitleaks_count = len(gitleaks_data)
+                  else:
+                      gitleaks_count = len(gitleaks_data.get('results', []))
+                  tools_results['gitleaks'] = gitleaks_count
+                  total_secrets += gitleaks_count
+              except Exception as e:
+                  print(f'Error reading Gitleaks results: {e}')
+                  tools_results['gitleaks'] = 0
+          else:
+              tools_results['gitleaks'] = 0
+          
+          # Check TruffleHog results  
+          trufflehog_file = reports_dir / 'trufflehog-results.json'
+          if trufflehog_file.exists() and trufflehog_file.stat().st_size > 0:
+              try:
+                  with open(trufflehog_file) as f:
+                      trufflehog_data = json.load(f)
+                  trufflehog_count = len(trufflehog_data) if isinstance(trufflehog_data, list) else 0
+                  tools_results['trufflehog'] = trufflehog_count
+                  total_secrets += trufflehog_count
+              except Exception as e:
+                  print(f'Error reading TruffleHog results: {e}')
+                  tools_results['trufflehog'] = 0
+          else:
+              tools_results['trufflehog'] = 0
+          
+          print(f'Secrets scanning results:')
+          for tool, count in tools_results.items():
+              print(f'  {tool}: {count} potential secrets')
+          
+          print(f'\\nTotal potential secrets found: {total_secrets}')
+          
+          if total_secrets > 0:
+              print('🚨 Potential secrets detected - immediate review required!')
+              exit(1)
+          else:
+              print('✅ No secrets detected')
+          "
+          
+      - name: Upload secrets scan SARIF
+        if: github.event.inputs.create_sarif != 'false'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security-reports/gitleaks-results.sarif
+          category: secrets-detection
+          
+      - name: Upload secrets scan results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: secrets-security-reports
+          path: security-reports/
+          retention-days: 90
+
+  # ============================================================================
+  # SUPPLY CHAIN SECURITY ANALYSIS
+  # ============================================================================
+  
+  supply-chain-security:
+    name: "🔗 Supply Chain Security Analysis"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install supply chain analysis tools
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install cyclonedx-bom pip-licenses
+          
+      - name: Analyze dependency licenses
+        run: |
+          echo "📋 Analyzing dependency licenses..."
+          mkdir -p security-reports
+          
+          # Install dependencies first
+          pip install -e .
+          
+          # Generate license report
+          pip-licenses --format=json --output-file=security-reports/licenses.json
+          pip-licenses --format=csv --output-file=security-reports/licenses.csv
+          pip-licenses --format=html --output-file=security-reports/licenses.html
+          
+          # Show summary
+          pip-licenses --summary
+          
+      - name: Check for license compatibility
+        run: |
+          echo "⚖️ Checking license compatibility..."
+          
+          python -c "
+          import json
+          
+          # Define license compatibility matrix
+          COMPATIBLE_LICENSES = [
+              'MIT License', 'MIT', 
+              'BSD License', 'BSD', 'BSD-3-Clause', 'BSD-2-Clause',
+              'Apache Software License', 'Apache 2.0', 'Apache License 2.0',
+              'Python Software Foundation License',
+              'ISC License', 'ISC',
+              'Mozilla Public License 2.0 (MPL 2.0)', 'MPL-2.0'
+          ]
+          
+          INCOMPATIBLE_LICENSES = [
+              'GNU General Public License', 'GPL', 'GPLv2', 'GPLv3',
+              'GNU Lesser General Public License', 'LGPL', 'LGPLv2', 'LGPLv3',
+              'Copyleft', 'AGPL'
+          ]
+          
+          try:
+              with open('security-reports/licenses.json', 'r') as f:
+                  licenses_data = json.load(f)
+              
+              compatible_count = 0
+              incompatible_count = 0
+              unknown_count = 0
+              
+              print('License compatibility analysis:')
+              
+              for pkg in licenses_data:
+                  name = pkg.get('Name', 'Unknown')
+                  license_name = pkg.get('License', 'Unknown')
+                  
+                  if any(compat in license_name for compat in COMPATIBLE_LICENSES):
+                      compatible_count += 1
+                  elif any(incompat in license_name for incompat in INCOMPATIBLE_LICENSES):
+                      incompatible_count += 1
+                      print(f'  ⚠️ {name}: {license_name} (potentially incompatible)')
+                  else:
+                      unknown_count += 1
+                      print(f'  ❓ {name}: {license_name} (unknown compatibility)')
+              
+              print(f'\\nLicense summary:')
+              print(f'  Compatible: {compatible_count}')
+              print(f'  Potentially incompatible: {incompatible_count}')
+              print(f'  Unknown: {unknown_count}')
+              
+              if incompatible_count > 0:
+                  print('\\n⚠️ Potentially incompatible licenses detected')
+                  print('Please review license compatibility with your project')
+              else:
+                  print('\\n✅ All licenses appear compatible')
+                  
+          except Exception as e:
+              print(f'Error analyzing licenses: {e}')
+          " > security-reports/license-analysis.log
+          
+      - name: Generate comprehensive SBOM
+        run: |
+          echo "📋 Generating comprehensive Software Bill of Materials..."
+          
+          # Generate detailed SBOM
+          cyclonedx-py --output-format json --output-file security-reports/comprehensive-sbom.json .
+          
+          # Add metadata to SBOM
+          python -c "
+          import json
+          from datetime import datetime
+          
+          try:
+              with open('security-reports/comprehensive-sbom.json', 'r') as f:
+                  sbom = json.load(f)
+              
+              # Add metadata
+              sbom['metadata'] = sbom.get('metadata', {})
+              sbom['metadata']['timestamp'] = datetime.utcnow().isoformat() + 'Z'
+              sbom['metadata']['supplier'] = {
+                  'name': 'Neural Architecture Team',
+                  'url': ['https://github.com/your-org/neural-arch']
+              }
+              
+              with open('security-reports/comprehensive-sbom.json', 'w') as f:
+                  json.dump(sbom, f, indent=2)
+                  
+              print('✅ SBOM enhanced with metadata')
+              
+          except Exception as e:
+              print(f'Error enhancing SBOM: {e}')
+          "
+          
+      - name: Upload supply chain reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: supply-chain-reports
+          path: security-reports/
+          retention-days: 90
+
+  # ============================================================================
+  # SECURITY COMPLIANCE REPORTING
+  # ============================================================================
+  
+  compliance-report:
+    name: "📊 Security Compliance Report"
+    needs: [sast-analysis, dependency-scan, secrets-scan, supply-chain-security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: always()
+    
+    steps:
+      - name: Download all security reports
+        uses: actions/download-artifact@v3
+        with:
+          path: all-security-reports/
+          
+      - name: Generate comprehensive security report
+        run: |
+          echo "📊 Generating comprehensive security compliance report..."
+          
+          cat > security-compliance-report.md << 'EOF'
+          # Security Compliance Report
+          
+          ## Executive Summary
+          Comprehensive security analysis conducted for Neural Architecture Framework.
+          
+          ## Report Metadata
+          - **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Branch**: ${{ github.ref_name }}
+          - **Commit**: ${{ github.sha }}
+          - **Workflow**: ${{ github.run_id }}
+          
+          ## Security Scanning Coverage
+          
+          ### Static Application Security Testing (SAST)
+          - **Tools Used**: Bandit, Semgrep, Custom Python Security Checks
+          - **Coverage**: Complete source code analysis
+          - **Report Location**: sast-security-reports/
+          
+          ### Dependency Vulnerability Scanning  
+          - **Tools Used**: Safety, pip-audit, OSV Scanner
+          - **Coverage**: All Python dependencies
+          - **SBOM Generated**: Yes (multiple formats)
+          - **Report Location**: dependency-security-reports/
+          
+          ### Secrets Detection
+          - **Tools Used**: detect-secrets, Gitleaks, TruffleHog
+          - **Coverage**: Full repository history
+          - **Report Location**: secrets-security-reports/
+          
+          ### Supply Chain Security
+          - **License Analysis**: Complete
+          - **SBOM Generation**: Comprehensive
+          - **Report Location**: supply-chain-reports/
+          
+          ## Compliance Standards
+          EOF
+          
+          # Add job results
+          NEEDS_JSON='${{ toJson(needs) }}'
+          
+          echo "$NEEDS_JSON" | python3 -c "
+          import json
+          import sys
+          
+          needs = json.load(sys.stdin)
+          
+          statuses = {
+              'SAST Analysis': needs.get('sast-analysis', {}).get('result', 'unknown'),
+              'Dependency Scanning': needs.get('dependency-scan', {}).get('result', 'unknown'),  
+              'Secrets Detection': needs.get('secrets-scan', {}).get('result', 'unknown'),
+              'Supply Chain Security': needs.get('supply-chain-security', {}).get('result', 'unknown')
+          }
+          
+          print('\\n### Security Gate Status')
+          for gate, status in statuses.items():
+              icon = '✅' if status == 'success' else '❌' if status == 'failure' else '⏭️'
+              print(f'- **{gate}**: {icon} {status.upper()}')
+          
+          # Overall compliance status
+          failed_gates = [gate for gate, status in statuses.items() if status == 'failure']
+          if failed_gates:
+              print(f'\\n❌ **Compliance Status**: NON-COMPLIANT')
+              print(f'\\n**Failed Security Gates**: {len(failed_gates)}')
+              for gate in failed_gates:
+                  print(f'- {gate}')
+          else:
+              print(f'\\n✅ **Compliance Status**: COMPLIANT')
+          " >> security-compliance-report.md
+          
+          cat >> security-compliance-report.md << 'EOF'
+          
+          ## Recommendations
+          
+          ### Immediate Actions
+          1. Review any failed security gates immediately
+          2. Address critical and high-severity vulnerabilities
+          3. Investigate and resolve any detected secrets
+          4. Validate license compatibility issues
+          
+          ### Ongoing Security Practices
+          1. Regular dependency updates via Dependabot
+          2. Pre-commit hooks for secret prevention
+          3. Automated security scanning in CI/CD
+          4. Security training for development team
+          
+          ## Artifact Retention
+          - **Security Reports**: 90 days
+          - **SBOM Files**: 90 days  
+          - **SARIF Reports**: Uploaded to GitHub Security tab
+          
+          ## Contact Information
+          - **Security Team**: security@neural-arch.ai
+          - **DevOps Team**: devops@neural-arch.ai
+          - **Compliance Officer**: compliance@neural-arch.ai
+          
+          ---
+          *This report is automatically generated by the Neural Architecture Framework Security Pipeline*
+          EOF
+          
+      - name: Create security issue for failures
+        if: contains(needs.*.result, 'failure')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let issue = '# 🔒 Security Compliance Failure\n\n';
+            issue += `**Date**: ${new Date().toISOString()}\n`;
+            issue += `**Branch**: ${{ github.ref_name }}\n`;
+            issue += `**Commit**: ${{ github.sha }}\n`;
+            issue += `**Workflow**: ${{ github.run_id }}\n\n`;
+            
+            const needs = ${{ toJson(needs) }};
+            const failedScans = [];
+            
+            for (const [scanName, scanResult] of Object.entries(needs)) {
+              if (scanResult.result === 'failure') {
+                failedScans.push(scanName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+              }
+            }
+            
+            if (failedScans.length > 0) {
+              issue += '## 🚨 Failed Security Scans\n\n';
+              failedScans.forEach(scan => {
+                issue += `- **${scan}**\n`;
+              });
+              issue += '\n';
+            }
+            
+            issue += '## 🔧 Required Actions\n\n';
+            issue += '1. **Immediate**: Review failed security scan results\n';
+            issue += '2. **High Priority**: Address critical vulnerabilities\n';
+            issue += '3. **Medium Priority**: Resolve medium-severity issues\n';
+            issue += '4. **Documentation**: Update security documentation if needed\n\n';
+            
+            issue += '## 📊 Reports\n\n';
+            issue += 'Download the security scan artifacts from the workflow run for detailed analysis.\n';
+            
+            const newIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔒 Security Compliance Failure - ${new Date().toISOString().split('T')[0]}`,
+              body: issue,
+              labels: ['security', 'compliance', 'ci/cd', 'high-priority']
+            });
+            
+            console.log(`Created security issue: ${newIssue.data.html_url}`);
+            
+      - name: Security compliance summary
+        run: |
+          echo "🔒 ================================"
+          echo "🔒 SECURITY COMPLIANCE COMPLETE"
+          echo "🔒 ================================"
+          echo ""
+          echo "📊 Security Scanning Summary:"
+          echo "• SAST Analysis: ${{ needs.sast-analysis.result }}"
+          echo "• Dependency Scanning: ${{ needs.dependency-scan.result }}"
+          echo "• Secrets Detection: ${{ needs.secrets-scan.result }}"
+          echo "• Supply Chain Security: ${{ needs.supply-chain-security.result }}"
+          echo ""
+          echo "🔍 Next Steps:"
+          echo "• Review security compliance report"
+          echo "• Address any identified vulnerabilities"
+          echo "• Monitor security dashboard for updates"
+          echo "• Ensure continuous security practices"
+          
+      - name: Upload comprehensive security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-compliance-report
+          path: security-compliance-report.md
+          retention-days: 365  # Keep compliance reports longer
