@@ -1,0 +1,51 @@
+extends: default
+
+rules:
+  # Allow longer lines for readability in CI/CD files
+  line-length:
+    max: 120
+    level: warning
+    
+  # Allow multiple spaces for alignment in YAML
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+    
+  # Be more lenient with comments for documentation
+  comments:
+    min-spaces-from-content: 1
+    
+  # Allow empty values for some CI/CD use cases  
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: true
+    
+  # Allow truthy values in GitHub Actions (on, off, etc.)
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+    check-keys: false
+    
+  # Allow duplicate keys in some cases (GitHub Actions can have this)
+  key-duplicates: disable
+  
+  # Allow quoted strings
+  quoted-strings:
+    quote-type: prefer-double
+    required: false
+    
+  # Be lenient with brackets spacing
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    
+  # Allow some flexibility in braces
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    
+# Files to ignore
+ignore: |
+  *.github/workflows/*.yml
+  *.github/workflows/*.yaml
+  .pre-commit-config.yaml

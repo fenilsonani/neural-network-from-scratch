@@ -1,0 +1,14 @@
+# Bandit configuration file to suppress false positives
+
+[bandit]
+# Skip tests directory
+exclude_dirs = tests,benchmarks
+
+# Skip specific security checks that are false positives for our use case:
+# B101: assert statements are used for validation in ML code 
+# B110: try/except/pass blocks are used for graceful fallbacks in backends
+# B310: urlopen is used for legitimate model downloads with proper validation
+# B404: subprocess import is needed for distributed training launcher
+# B603: subprocess calls are safe (using sys.executable, no untrusted input)
+# B607: subprocess with partial path - we use sys.executable which is safe
+skips = B101,B110,B310,B404,B603,B607

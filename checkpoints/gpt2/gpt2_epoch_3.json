@@ -1,0 +1,38 @@
+{
+  "epoch": 2,
+  "step": 150,
+  "config": {
+    "vocab_size": 200,
+    "n_embd": 128,
+    "n_layer": 3,
+    "n_head": 4,
+    "n_ctx": 32,
+    "batch_size": 4,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.1,
+    "num_epochs": 3,
+    "warmup_steps": 500,
+    "max_grad_norm": 1.0,
+    "train_size": 200,
+    "val_size": 40,
+    "generate_every": 25,
+    "max_generate_length": 20,
+    "enable_optimizations": true,
+    "save_checkpoints": true,
+    "checkpoint_dir": "checkpoints/gpt2"
+  },
+  "metrics": {
+    "train": {
+      "loss": 5.290293483734131,
+      "perplexity": 198.44211294256024,
+      "accuracy": 0.005806451612903223,
+      "time": 0.17543292045593262
+    },
+    "val": {
+      "loss": 5.310625076293945,
+      "perplexity": 202.4767522584038,
+      "accuracy": 0.0,
+      "time": 0.03542971611022949
+    }
+  }
+}
