@@ -1,7 +1,9 @@
 # Neural Architecture Framework
 
-[![Tests](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/tests.yml/badge.svg)](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-95%25-brightgreen)](https://github.com/fenilsonani/neural-network-from-scratch)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 
 A neural network implementation built from scratch using NumPy, designed for educational purposes and research experimentation.
 
