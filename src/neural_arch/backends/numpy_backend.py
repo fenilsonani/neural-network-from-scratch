@@ -155,18 +155,6 @@ class NumpyBackend(Backend):
     def clip(self, x: np.ndarray, min_val: float, max_val: float) -> np.ndarray:
         return np.clip(x, min_val, max_val)
     
-    def maximum(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Element-wise maximum of two arrays."""
-        return np.maximum(x, y)
-    
-    def minimum(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Element-wise minimum of two arrays."""
-        return np.minimum(x, y)
-    
-    def tanh(self, x: np.ndarray) -> np.ndarray:
-        """Compute hyperbolic tangent function."""
-        return np.tanh(x)
-    
     def softmax(self, x: np.ndarray, axis: int = -1) -> np.ndarray:
         """Compute softmax function."""
         # Subtract max for numerical stability
