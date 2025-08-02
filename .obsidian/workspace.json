@@ -1,0 +1,198 @@
+{
+  "main": {
+    "id": "1b115b24c8250d29",
+    "type": "split",
+    "children": [
+      {
+        "id": "eb42ee86957bb971",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "98cfffa134136a86",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "marketing/content/social-media/hackernews-posts/technical-discussion.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "technical-discussion"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "5322e833dc39efb0",
+    "type": "split",
+    "children": [
+      {
+        "id": "8a4ede68ce589183",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "74af68db77faec4f",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "338d4d3455927287",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "58713c49b20e1b74",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "225491a08eec54a6",
+    "type": "split",
+    "children": [
+      {
+        "id": "1e6c9a3e30451611",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "685342996c0b4454",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "marketing/content/social-media/hackernews-posts/technical-discussion.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for technical-discussion"
+            }
+          },
+          {
+            "id": "898514bbeb123944",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "marketing/content/social-media/hackernews-posts/technical-discussion.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from technical-discussion"
+            }
+          },
+          {
+            "id": "c04ce60892251e2d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "0a846732bd6e12bf",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "marketing/content/social-media/hackernews-posts/technical-discussion.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of technical-discussion"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "98cfffa134136a86",
+  "lastOpenFiles": [
+    "CICD_ARCHITECTURE.md",
+    "docs/CI_CD_TROUBLESHOOTING.md",
+    "docs/CI_CD_ARCHITECTURE.md",
+    "TEST_EXECUTION_SUMMARY.md",
+    "tests/__pycache__/test_distributed_checkpointing.cpython-313-pytest-8.4.1.pyc",
+    "tests/__pycache__/test_nn_linear_95_coverage.cpython-313-pytest-8.4.1.pyc",
+    "MULTI_AGENT_COVERAGE_REPORT.md",
+    "tests/test_enhanced_model_registry_utils.py",
+    "tests/test_enhanced_optimization_modules.py",
+    "tests/__pycache__/test_backend_registration_comprehensive.cpython-313-pytest-8.4.1.pyc",
+    "tests/test_backend_registration_comprehensive.py",
+    "tests/test_enhanced_multimodal_models.py",
+    "tests/__pycache__/test_backend_utils_enhanced.cpython-313-pytest-8.4.1.pyc",
+    "tests/test_backend_utils_enhanced.py",
+    "tests/test_nn_positional_95_coverage.py",
+    "FUNCTIONAL_COVERAGE_REPORT.md",
+    "marketing/content/social-media/bluesky-posts/technical-announcement.md",
+    "marketing/content/press-kit/fact-sheet.md",
+    "marketing/content/metrics-tracking/analytics-dashboard.md",
+    "marketing/content/blog-posts/02-technical-deep-dives/testing-ml-code-700-tests.md",
+    "marketing/content/blog-posts/01-introduction-series/flagship-building-neural-networks-from-scratch.md",
+    "marketing/COMMUNITY_SEEDING_STRATEGY.md",
+    "marketing/BATTLE_TESTED_PLAN.md",
+    "docs/API_REFERENCE.md"
+  ]
+}

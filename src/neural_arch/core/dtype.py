@@ -1,8 +1,9 @@
 """Data type management for tensors."""
 
-import numpy as np
 from enum import Enum
-from typing import Union, Type
+from typing import Type, Union
+
+import numpy as np
 
 
 class DType(Enum):

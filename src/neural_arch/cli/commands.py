@@ -12,7 +12,7 @@ def train_command(args, config):
 
 
 def test_command(args, config):
-    """Test command implementation.""" 
+    """Test command implementation."""
     logger.info("Test command not yet implemented")
     return 0
 
@@ -39,5 +39,5 @@ def config_command(args, config):
 
 def export_command(args, config):
     """Export command implementation."""
-    logger.info("Export command not yet implemented") 
+    logger.info("Export command not yet implemented")
     return 0

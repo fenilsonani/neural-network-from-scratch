@@ -1,8 +1,8 @@
 """Base classes and abstractions for neural network components."""
 
 import abc
-from typing import Dict, Any, Optional, Iterator, Tuple, Protocol
 from collections import OrderedDict
+from typing import Any, Dict, Iterator, Optional, Protocol, Tuple
 
 from .tensor import Tensor
 

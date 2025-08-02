@@ -1,9 +1,9 @@
 """Device management for tensor operations."""
 
 import platform
-from enum import Enum
-from typing import Union, Optional
 from dataclasses import dataclass
+from enum import Enum
+from typing import Optional, Union
 
 
 class DeviceType(Enum):
@@ -181,6 +181,7 @@ def get_device_capabilities() -> dict:
     if sys.platform == "darwin" and platform.machine() == "arm64":
         try:
             import mlx.core as mx
+
             # Test if we can create an array
             test = mx.array([1.0])
             capabilities["mps"]["available"] = True

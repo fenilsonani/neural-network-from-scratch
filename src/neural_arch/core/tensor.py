@@ -1,15 +1,16 @@
 """Enterprise-grade tensor implementation with automatic differentiation."""
 
-import numpy as np
-from typing import Union, Optional, Tuple, List, Protocol, Any, Callable
-from contextlib import contextmanager
-import weakref
-from dataclasses import dataclass
 import logging
+import weakref
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
 
+import numpy as np
+
+from ..backends import Backend, get_backend, set_backend
+from .device import Device, DeviceType, get_default_device
 from .dtype import DType, get_default_dtype
-from .device import Device, get_default_device, DeviceType
-from ..backends import get_backend, set_backend, Backend
 
 # Type aliases
 TensorLike = Union['Tensor', np.ndarray, list, float, int]
@@ -126,8 +127,8 @@ class Tensor:
     
     def _select_cpu_backend(self) -> Backend:
         """Select the best CPU backend based on tensor size and global configuration."""
-        from ..backends.utils import auto_select_backend
         from ..backends import available_backends
+        from ..backends.utils import auto_select_backend
         from ..optimization_config import get_config
         
         config = get_config()

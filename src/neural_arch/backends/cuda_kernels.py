@@ -4,13 +4,15 @@ This module provides hand-optimized CUDA kernels for critical operations
 that can achieve 5-10x speedup over standard implementations.
 """
 
-import numpy as np
-from typing import Tuple, Optional, Any
 import logging
+from typing import Any, Optional, Tuple
+
+import numpy as np
 
 try:
     import cupy as cp
     from cupy import cuda
+
     CUPY_AVAILABLE = True
 except ImportError:
     CUPY_AVAILABLE = False
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # Flash Attention kernel (simplified version)
-FLASH_ATTENTION_KERNEL = r'''
+FLASH_ATTENTION_KERNEL = r"""
 extern "C" __global__
 void flash_attention_kernel(
     const float* Q, const float* K, const float* V,
@@ -155,10 +157,10 @@ void flash_attention_kernel(
         __syncthreads();
     }
 }
-'''
+"""
 
 # Optimized GELU kernel
-GELU_KERNEL = r'''
+GELU_KERNEL = r"""
 extern "C" __global__
 void gelu_forward_kernel(const float* input, float* output, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -188,10 +190,10 @@ void gelu_backward_kernel(const float* grad_output, const float* input,
         grad_input[idx] = grad_output[idx] * (grad_linear + grad_tanh);
     }
 }
-'''
+"""
 
 # Fused linear + GELU kernel
-FUSED_LINEAR_GELU_KERNEL = r'''
+FUSED_LINEAR_GELU_KERNEL = r"""
 extern "C" __global__
 void fused_linear_gelu_kernel(
     const float* input, const float* weight, const float* bias,
@@ -237,10 +239,10 @@ void fused_linear_gelu_kernel(
         output[batch_idx * out_features + out_idx] = 0.5f * total * (1.0f + tanhf(inner));
     }
 }
-'''
+"""
 
 # Layer normalization kernel
-LAYERNORM_KERNEL = r'''
+LAYERNORM_KERNEL = r"""
 extern "C" __global__
 void layernorm_forward_kernel(
     const float* input, const float* weight, const float* bias,
@@ -309,202 +311,226 @@ void layernorm_forward_kernel(
         output[batch_idx * hidden_size + i] = normalized * weight[i] + bias[i];
     }
 }
-'''
+"""
 
 
 class CUDAKernelManager:
     """Manager for custom CUDA kernels with automatic compilation and caching."""
-    
+
     def __init__(self):
         self.compiled_kernels = {}
         self.device_props = None
-        
+
         if CUPY_AVAILABLE:
             try:
                 self.device_props = cuda.runtime.getDeviceProperties(0)
                 logger.info(f"CUDA device: {self.device_props['name'].decode()}")
-                logger.info(f"Compute capability: {self.device_props['major']}.{self.device_props['minor']}")
+                logger.info(
+                    f"Compute capability: {self.device_props['major']}.{self.device_props['minor']}"
+                )
                 self._compile_kernels()
             except Exception as e:
                 logger.warning(f"Failed to initialize CUDA kernels: {e}")
         else:
             logger.warning("CuPy not available, CUDA kernels disabled")
-    
+
     def _compile_kernels(self):
         """Compile all CUDA kernels."""
         try:
             # Compile GELU kernels
-            self.compiled_kernels['gelu'] = cp.RawKernel(
-                GELU_KERNEL, 'gelu_forward_kernel'
+            self.compiled_kernels["gelu"] = cp.RawKernel(GELU_KERNEL, "gelu_forward_kernel")
+            self.compiled_kernels["gelu_backward"] = cp.RawKernel(
+                GELU_KERNEL, "gelu_backward_kernel"
             )
-            self.compiled_kernels['gelu_backward'] = cp.RawKernel(
-                GELU_KERNEL, 'gelu_backward_kernel'
-            )
-            
+
             # Compile fused linear + GELU kernel
-            self.compiled_kernels['fused_linear_gelu'] = cp.RawKernel(
-                FUSED_LINEAR_GELU_KERNEL, 'fused_linear_gelu_kernel'
+            self.compiled_kernels["fused_linear_gelu"] = cp.RawKernel(
+                FUSED_LINEAR_GELU_KERNEL, "fused_linear_gelu_kernel"
             )
-            
+
             # Compile layer normalization kernel
-            self.compiled_kernels['layernorm'] = cp.RawKernel(
-                LAYERNORM_KERNEL, 'layernorm_forward_kernel'
+            self.compiled_kernels["layernorm"] = cp.RawKernel(
+                LAYERNORM_KERNEL, "layernorm_forward_kernel"
             )
-            
+
             # Compile Flash Attention kernel (more complex compilation)
-            self.compiled_kernels['flash_attention'] = cp.RawKernel(
-                FLASH_ATTENTION_KERNEL, 'flash_attention_kernel'
+            self.compiled_kernels["flash_attention"] = cp.RawKernel(
+                FLASH_ATTENTION_KERNEL, "flash_attention_kernel"
             )
-            
+
             logger.info(f"Compiled {len(self.compiled_kernels)} CUDA kernels")
-            
+
         except Exception as e:
             logger.error(f"Failed to compile CUDA kernels: {e}")
             self.compiled_kernels.clear()
-    
+
     def is_available(self) -> bool:
         """Check if CUDA kernels are available."""
         return CUPY_AVAILABLE and len(self.compiled_kernels) > 0
-    
+
     def gelu_forward(self, input_gpu: Any) -> Any:
         """Ultra-fast GELU forward pass."""
-        if 'gelu' not in self.compiled_kernels:
+        if "gelu" not in self.compiled_kernels:
             raise RuntimeError("GELU kernel not available")
-        
+
         output_gpu = cp.empty_like(input_gpu)
         size = input_gpu.size
-        
+
         # Launch configuration
         threads_per_block = 256
         blocks = (size + threads_per_block - 1) // threads_per_block
-        
-        self.compiled_kernels['gelu'](
-            (blocks,), (threads_per_block,),
-            (input_gpu, output_gpu, size)
+
+        self.compiled_kernels["gelu"](
+            (blocks,), (threads_per_block,), (input_gpu, output_gpu, size)
         )
-        
+
         return output_gpu
-    
-    def fused_linear_gelu(self, input_gpu: Any, weight_gpu: Any, 
-                         bias_gpu: Any) -> Any:
+
+    def fused_linear_gelu(self, input_gpu: Any, weight_gpu: Any, bias_gpu: Any) -> Any:
         """Fused linear + GELU operation."""
-        if 'fused_linear_gelu' not in self.compiled_kernels:
+        if "fused_linear_gelu" not in self.compiled_kernels:
             raise RuntimeError("Fused Linear+GELU kernel not available")
-        
+
         batch_size, in_features = input_gpu.shape
         out_features = weight_gpu.shape[0]
-        
+
         output_gpu = cp.empty((batch_size, out_features), dtype=cp.float32)
-        
+
         # Launch configuration
         threads_per_block = (32, 8)  # (reduction threads, output threads)
         blocks = (batch_size, (out_features + threads_per_block[1] - 1) // threads_per_block[1])
         shared_mem = threads_per_block[0] // 32 * 4  # For warp reduction
-        
-        self.compiled_kernels['fused_linear_gelu'](
-            blocks, threads_per_block,
-            (input_gpu, weight_gpu, bias_gpu, output_gpu, 
-             batch_size, in_features, out_features),
-            shared_mem=shared_mem
+
+        self.compiled_kernels["fused_linear_gelu"](
+            blocks,
+            threads_per_block,
+            (input_gpu, weight_gpu, bias_gpu, output_gpu, batch_size, in_features, out_features),
+            shared_mem=shared_mem,
         )
-        
+
         return output_gpu
-    
-    def layernorm_forward(self, input_gpu: Any, weight_gpu: Any,
-                         bias_gpu: Any, eps: float = 1e-5) -> Tuple[Any, Any, Any]:
+
+    def layernorm_forward(
+        self, input_gpu: Any, weight_gpu: Any, bias_gpu: Any, eps: float = 1e-5
+    ) -> Tuple[Any, Any, Any]:
         """Layer normalization forward pass."""
-        if 'layernorm' not in self.compiled_kernels:
+        if "layernorm" not in self.compiled_kernels:
             raise RuntimeError("LayerNorm kernel not available")
-        
+
         batch_size, hidden_size = input_gpu.shape
-        
+
         output_gpu = cp.empty_like(input_gpu)
         mean_gpu = cp.empty(batch_size, dtype=cp.float32)
         rstd_gpu = cp.empty(batch_size, dtype=cp.float32)
-        
+
         # Launch configuration
         threads_per_block = min(1024, ((hidden_size + 31) // 32) * 32)
         blocks = batch_size
         shared_mem = threads_per_block * 2 * 4  # For mean and variance reduction
-        
-        self.compiled_kernels['layernorm'](
-            (blocks,), (threads_per_block,),
-            (input_gpu, weight_gpu, bias_gpu, output_gpu, 
-             mean_gpu, rstd_gpu, batch_size, hidden_size, eps),
-            shared_mem=shared_mem
+
+        self.compiled_kernels["layernorm"](
+            (blocks,),
+            (threads_per_block,),
+            (
+                input_gpu,
+                weight_gpu,
+                bias_gpu,
+                output_gpu,
+                mean_gpu,
+                rstd_gpu,
+                batch_size,
+                hidden_size,
+                eps,
+            ),
+            shared_mem=shared_mem,
         )
-        
+
         return output_gpu, mean_gpu, rstd_gpu
-    
-    def flash_attention(self, q_gpu: Any, k_gpu: Any, 
-                       v_gpu: Any, scale: float, block_size: int = 64) -> Any:
+
+    def flash_attention(
+        self, q_gpu: Any, k_gpu: Any, v_gpu: Any, scale: float, block_size: int = 64
+    ) -> Any:
         """Flash Attention implementation for memory-efficient attention."""
-        if 'flash_attention' not in self.compiled_kernels:
+        if "flash_attention" not in self.compiled_kernels:
             raise RuntimeError("Flash Attention kernel not available")
-        
+
         batch_size, num_heads, seq_len, head_dim = q_gpu.shape
-        
+
         output_gpu = cp.zeros_like(q_gpu)
         l_gpu = cp.zeros((batch_size, num_heads, seq_len), dtype=cp.float32)
-        m_gpu = cp.full((batch_size, num_heads, seq_len), -float('inf'), dtype=cp.float32)
-        
+        m_gpu = cp.full((batch_size, num_heads, seq_len), -float("inf"), dtype=cp.float32)
+
         # Launch configuration
         threads_per_block = min(256, block_size)
         blocks = (batch_size, num_heads, (seq_len + block_size - 1) // block_size)
-        
+
         # Shared memory for Q, K, V blocks and attention scores
         shared_mem = (3 * block_size * head_dim + block_size * block_size) * 4
-        
-        self.compiled_kernels['flash_attention'](
-            blocks, (threads_per_block,),
-            (q_gpu, k_gpu, v_gpu, output_gpu, l_gpu, m_gpu,
-             batch_size, num_heads, seq_len, head_dim, scale, block_size),
-            shared_mem=shared_mem
+
+        self.compiled_kernels["flash_attention"](
+            blocks,
+            (threads_per_block,),
+            (
+                q_gpu,
+                k_gpu,
+                v_gpu,
+                output_gpu,
+                l_gpu,
+                m_gpu,
+                batch_size,
+                num_heads,
+                seq_len,
+                head_dim,
+                scale,
+                block_size,
+            ),
+            shared_mem=shared_mem,
         )
-        
+
         return output_gpu
-    
+
     def benchmark_kernel(self, kernel_name: str, *args, num_runs: int = 100) -> float:
         """Benchmark a specific kernel performance."""
         if not self.is_available() or kernel_name not in self.compiled_kernels:
-            return float('inf')
-        
+            return float("inf")
+
         # Warmup
-        if kernel_name == 'gelu':
+        if kernel_name == "gelu":
             self.gelu_forward(*args)
-        elif kernel_name == 'fused_linear_gelu':
+        elif kernel_name == "fused_linear_gelu":
             self.fused_linear_gelu(*args)
-        elif kernel_name == 'layernorm':
+        elif kernel_name == "layernorm":
             self.layernorm_forward(*args)
-        elif kernel_name == 'flash_attention':
+        elif kernel_name == "flash_attention":
             self.flash_attention(*args)
-        
+
         cp.cuda.Device().synchronize()
-        
+
         # Actual benchmark
         start_event = cp.cuda.Event()
         end_event = cp.cuda.Event()
-        
+
         start_event.record()
         for _ in range(num_runs):
-            if kernel_name == 'gelu':
+            if kernel_name == "gelu":
                 self.gelu_forward(*args)
-            elif kernel_name == 'fused_linear_gelu':
+            elif kernel_name == "fused_linear_gelu":
                 self.fused_linear_gelu(*args)
-            elif kernel_name == 'layernorm':
+            elif kernel_name == "layernorm":
                 self.layernorm_forward(*args)
-            elif kernel_name == 'flash_attention':
+            elif kernel_name == "flash_attention":
                 self.flash_attention(*args)
         end_event.record()
-        
+
         cp.cuda.Device().synchronize()
         elapsed_time = cp.cuda.get_elapsed_time(start_event, end_event)
-        
+
         return elapsed_time / num_runs  # Average time per run in ms
 
 
 # Global kernel manager instance
 _kernel_manager = None
+
 
 def get_cuda_kernel_manager() -> CUDAKernelManager:
     """Get the global CUDA kernel manager."""
@@ -520,23 +546,22 @@ def cuda_gelu(input_gpu: Any) -> Any:
     return manager.gelu_forward(input_gpu)
 
 
-def cuda_fused_linear_gelu(input_gpu: Any, weight_gpu: Any, 
-                          bias_gpu: Any) -> Any:
+def cuda_fused_linear_gelu(input_gpu: Any, weight_gpu: Any, bias_gpu: Any) -> Any:
     """High-level interface for fused linear + GELU."""
     manager = get_cuda_kernel_manager()
     return manager.fused_linear_gelu(input_gpu, weight_gpu, bias_gpu)
 
 
-def cuda_layernorm(input_gpu: Any, weight_gpu: Any, 
-                  bias_gpu: Any, eps: float = 1e-5) -> Any:
+def cuda_layernorm(input_gpu: Any, weight_gpu: Any, bias_gpu: Any, eps: float = 1e-5) -> Any:
     """High-level interface for CUDA layer normalization."""
     manager = get_cuda_kernel_manager()
     output, _, _ = manager.layernorm_forward(input_gpu, weight_gpu, bias_gpu, eps)
     return output
 
 
-def cuda_flash_attention(q_gpu: Any, k_gpu: Any, v_gpu: Any,
-                        scale: float, block_size: int = 64) -> Any:
+def cuda_flash_attention(
+    q_gpu: Any, k_gpu: Any, v_gpu: Any, scale: float, block_size: int = 64
+) -> Any:
     """High-level interface for Flash Attention."""
     manager = get_cuda_kernel_manager()
     return manager.flash_attention(q_gpu, k_gpu, v_gpu, scale, block_size)
