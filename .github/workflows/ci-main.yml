@@ -103,7 +103,7 @@ jobs:
         echo "✅ Type checking completed"
     
     - name: 📊 Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
@@ -177,7 +177,7 @@ jobs:
           --tb=short --strict-markers --disable-warnings
     
     - name: 📊 Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
@@ -237,7 +237,7 @@ jobs:
         fi
     
     - name: 📊 Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports
         path: |
@@ -302,7 +302,7 @@ jobs:
         echo "✅ CLI working correctly"
     
     - name: 📦 Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: dist/
@@ -388,7 +388,7 @@ jobs:
         EOF
     
     - name: 📤 Upload quality report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: quality-gate-report
         path: quality-report.md
@@ -422,7 +422,7 @@ jobs:
         echo "Deployment tag created: $(cat deployment-tag.txt)"
     
     - name: 📤 Upload deployment artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: deployment-ready
         path: deployment-tag.txt
