@@ -5,12 +5,16 @@ This module provides enterprise-grade mixed precision training that can achieve:
 - 40-60% memory reduction
 - Automatic numerical stability management
 - Gradient scaling and unscaling
+- Flexible autocast policies
+- Integration with advanced gradient scalers
 """
 
 import logging
+import warnings
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 
 import numpy as np
 
@@ -22,6 +26,115 @@ logger = logging.getLogger(__name__)
 
 # Global state for tracking autocast context
 _autocast_enabled = False
+_autocast_policy = None
+
+
+class AutocastPolicy(Enum):
+    """Different autocast policies for mixed precision training."""
+    
+    CONSERVATIVE = "conservative"  # Only cast operations known to be stable
+    AGGRESSIVE = "aggressive"     # Cast most operations to FP16
+    SELECTIVE = "selective"       # Use operation-specific rules
+    DYNAMIC = "dynamic"          # Adapt based on training stability
+
+
+class AutocastConfig:
+    """Configuration for autocast behavior."""
+    
+    def __init__(
+        self,
+        enabled: bool = True,
+        policy: AutocastPolicy = AutocastPolicy.SELECTIVE,
+        cast_model_outputs: bool = False,
+        cast_loss_to_fp32: bool = True,
+        allowed_ops: Optional[List[str]] = None,
+        blocked_ops: Optional[List[str]] = None,
+        custom_rules: Optional[Dict[str, bool]] = None,
+    ):
+        """Initialize autocast configuration.
+        
+        Args:
+            enabled: Whether autocast is enabled
+            policy: Autocast policy to use
+            cast_model_outputs: Whether to cast model outputs to FP16
+            cast_loss_to_fp32: Whether to ensure loss computation in FP32
+            allowed_ops: Specific operations to allow in FP16
+            blocked_ops: Specific operations to block from FP16
+            custom_rules: Custom rules for specific operations
+        """
+        self.enabled = enabled
+        self.policy = policy
+        self.cast_model_outputs = cast_model_outputs
+        self.cast_loss_to_fp32 = cast_loss_to_fp32
+        self.allowed_ops = set(allowed_ops or [])
+        self.blocked_ops = set(blocked_ops or [])
+        self.custom_rules = custom_rules or {}
+        
+        # Default operation rules based on policy
+        self._setup_default_rules()
+    
+    def _setup_default_rules(self):
+        """Setup default operation rules based on policy."""
+        if self.policy == AutocastPolicy.CONSERVATIVE:
+            # Only basic operations
+            self.allowed_ops.update({
+                "add", "subtract", "multiply", "matmul", "conv2d", 
+                "linear", "relu", "gelu", "tanh"
+            })
+            self.blocked_ops.update({
+                "softmax", "log", "exp", "divide", "sqrt", "norm",
+                "loss_functions", "batch_norm", "layer_norm"
+            })
+        
+        elif self.policy == AutocastPolicy.AGGRESSIVE:
+            # Most operations except known problematic ones
+            self.blocked_ops.update({
+                "softmax", "log_softmax", "cross_entropy", "nll_loss"
+            })
+        
+        elif self.policy == AutocastPolicy.SELECTIVE:
+            # Balanced approach
+            self.allowed_ops.update({
+                "add", "subtract", "multiply", "matmul", "conv2d",
+                "linear", "relu", "gelu", "tanh", "sigmoid",
+                "batch_norm", "layer_norm"
+            })
+            self.blocked_ops.update({
+                "softmax", "log", "exp", "sqrt", "reciprocal",
+                "cross_entropy", "nll_loss", "mse_loss"
+            })
+    
+    def should_cast_op(self, op_name: str) -> bool:
+        """Determine if an operation should be cast to FP16.
+        
+        Args:
+            op_name: Name of the operation
+            
+        Returns:
+            True if operation should be cast to FP16
+        """
+        if not self.enabled:
+            return False
+        
+        # Check custom rules first
+        if op_name in self.custom_rules:
+            return self.custom_rules[op_name]
+        
+        # Check blocked operations
+        if op_name in self.blocked_ops:
+            return False
+        
+        # Check allowed operations
+        if self.allowed_ops and op_name not in self.allowed_ops:
+            return False
+        
+        # Default behavior based on policy
+        if self.policy == AutocastPolicy.AGGRESSIVE:
+            return True
+        elif self.policy == AutocastPolicy.CONSERVATIVE:
+            return op_name in self.allowed_ops
+        else:  # SELECTIVE or DYNAMIC
+            return op_name not in self.blocked_ops
 
 
 @dataclass
@@ -35,6 +148,17 @@ class PrecisionConfig:
     growth_interval: int = 2000  # Steps between loss scale increases
     max_loss_scale: float = 2**24  # Maximum loss scale
     min_loss_scale: float = 1.0  # Minimum loss scale
+    
+    # Enhanced configuration options
+    autocast_config: Optional[AutocastConfig] = None
+    use_advanced_scaler: bool = True  # Use AdvancedGradScaler instead of basic GradScaler
+    gradient_clip_threshold: float = 1.0  # Gradient clipping threshold
+    stability_check_enabled: bool = True  # Enable stability monitoring
+    
+    def __post_init__(self):
+        """Initialize default autocast config if not provided."""
+        if self.autocast_config is None:
+            self.autocast_config = AutocastConfig()
 
 
 class GradScaler:
@@ -161,55 +285,97 @@ class GradScaler:
 
 
 class AutomaticMixedPrecision:
-    """Automatic Mixed Precision training context manager."""
+    """Enhanced Automatic Mixed Precision training context manager."""
 
-    def __init__(self, enabled: bool = True):
+    def __init__(self, enabled: bool = True, config: Optional[AutocastConfig] = None):
         self.enabled = enabled
+        self.config = config or AutocastConfig()
         self._original_dtype = None
-        logger.info(f"AMP {'enabled' if enabled else 'disabled'}")
+        self._original_policy = None
+        logger.info(f"AMP {'enabled' if enabled else 'disabled'} with policy {self.config.policy.value}")
 
     def __enter__(self):
-        global _autocast_enabled
-        if self.enabled:
-            # Store original default dtype
-            from ..core.dtype import DType, get_default_dtype, set_default_dtype
-
-            self._original_dtype = get_default_dtype()
-
-            # Set to FP16 for forward pass
-            set_default_dtype(DType.FLOAT16)
+        global _autocast_enabled, _autocast_policy
+        if self.enabled and self.config.enabled:
+            # Store original state
+            self._original_policy = _autocast_policy
+            
+            try:
+                from ..core.dtype import DType, get_default_dtype, set_default_dtype
+                self._original_dtype = get_default_dtype()
+                
+                # Set to FP16 for forward pass
+                set_default_dtype(DType.FLOAT16)
+            except ImportError:
+                logger.warning("Could not import dtype utilities, using numpy dtypes")
+                self._original_dtype = np.float32
+            
             _autocast_enabled = True
-            logger.debug("Entered AMP context - using FP16")
+            _autocast_policy = self.config
+            logger.debug(f"Entered AMP context - using FP16 with {self.config.policy.value} policy")
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        global _autocast_enabled
+        global _autocast_enabled, _autocast_policy
         if self.enabled and self._original_dtype is not None:
-            # Restore original dtype
-            from ..core.dtype import set_default_dtype
-
-            set_default_dtype(self._original_dtype)
+            # Restore original state
+            try:
+                from ..core.dtype import set_default_dtype
+                set_default_dtype(self._original_dtype)
+            except ImportError:
+                pass  # Fallback gracefully
+            
             _autocast_enabled = False
-            logger.debug("Exited AMP context - restored original dtype")
+            _autocast_policy = self._original_policy
+            logger.debug("Exited AMP context - restored original dtype and policy")
 
 
 class MixedPrecisionManager:
-    """Enterprise-grade mixed precision training manager."""
+    """Enterprise-grade mixed precision training manager with advanced features."""
 
     def __init__(self, config: Optional[PrecisionConfig] = None):
         self.config = config or PrecisionConfig()
-        self.scaler = GradScaler(
-            init_scale=self.config.loss_scale,
-            growth_factor=self.config.growth_factor,
-            backoff_factor=self.config.backoff_factor,
-            growth_interval=self.config.growth_interval,
-        )
+        
+        # Choose scaler type based on configuration
+        if self.config.use_advanced_scaler:
+            try:
+                from .grad_scaler import AdvancedGradScaler, ScalerConfig
+                scaler_config = ScalerConfig(
+                    init_scale=self.config.loss_scale,
+                    growth_factor=self.config.growth_factor,
+                    backoff_factor=self.config.backoff_factor,
+                    growth_interval=self.config.growth_interval,
+                    max_loss_scale=self.config.max_loss_scale,
+                    min_loss_scale=self.config.min_loss_scale,
+                    enabled=self.config.enabled,
+                    gradient_clip_threshold=self.config.gradient_clip_threshold,
+                )
+                self.scaler = AdvancedGradScaler(scaler_config)
+                logger.info("Using AdvancedGradScaler for mixed precision training")
+            except ImportError:
+                logger.warning("AdvancedGradScaler not available, using basic GradScaler")
+                self.scaler = GradScaler(
+                    init_scale=self.config.loss_scale,
+                    growth_factor=self.config.growth_factor,
+                    backoff_factor=self.config.backoff_factor,
+                    growth_interval=self.config.growth_interval,
+                )
+        else:
+            self.scaler = GradScaler(
+                init_scale=self.config.loss_scale,
+                growth_factor=self.config.growth_factor,
+                backoff_factor=self.config.backoff_factor,
+                growth_interval=self.config.growth_interval,
+            )
+        
         self._step_count = 0
         self._successful_steps = 0
         self._skipped_steps = 0
+        self._autocast_context = None
 
-        logger.info(f"Mixed precision manager initialized: enabled={self.config.enabled}")
+        logger.info(f"Mixed precision manager initialized: enabled={self.config.enabled}, "
+                   f"policy={self.config.autocast_config.policy.value}")
 
     def is_autocast_enabled(self) -> bool:
         """Check if we're currently in an autocast context."""
@@ -217,9 +383,31 @@ class MixedPrecisionManager:
         return _autocast_enabled and self.config.enabled
 
     @contextmanager
-    def autocast(self):
-        """Context manager for automatic mixed precision."""
-        with AutomaticMixedPrecision(enabled=self.config.enabled):
+    def autocast(self, enabled: Optional[bool] = None, policy: Optional[AutocastPolicy] = None):
+        """Enhanced context manager for automatic mixed precision.
+        
+        Args:
+            enabled: Override enabled state for this context
+            policy: Override autocast policy for this context
+        """
+        # Determine effective configuration
+        effective_enabled = enabled if enabled is not None else self.config.enabled
+        
+        if policy is not None:
+            # Create temporary config with different policy
+            temp_config = AutocastConfig(
+                enabled=self.config.autocast_config.enabled,
+                policy=policy,
+                cast_model_outputs=self.config.autocast_config.cast_model_outputs,
+                cast_loss_to_fp32=self.config.autocast_config.cast_loss_to_fp32,
+                allowed_ops=list(self.config.autocast_config.allowed_ops),
+                blocked_ops=list(self.config.autocast_config.blocked_ops),
+                custom_rules=self.config.autocast_config.custom_rules.copy(),
+            )
+        else:
+            temp_config = self.config.autocast_config
+        
+        with AutomaticMixedPrecision(enabled=effective_enabled, config=temp_config):
             yield
 
     def scale_loss(self, loss: Tensor) -> Tensor:
@@ -390,17 +578,32 @@ def is_autocast_enabled() -> bool:
 
 
 @contextmanager
-def autocast(enabled: bool = True):
-    """Context manager for automatic mixed precision training.
+def autocast(enabled: bool = True, policy: Optional[AutocastPolicy] = None, 
+             config: Optional[AutocastConfig] = None):
+    """Enhanced context manager for automatic mixed precision training.
+
+    Args:
+        enabled: Whether to enable autocast
+        policy: Autocast policy to use
+        config: Full autocast configuration (overrides policy if provided)
 
     Usage:
         with autocast():
             output = model(input)
             loss = criterion(output, target)
+        
+        # Or with specific policy
+        with autocast(policy=AutocastPolicy.CONSERVATIVE):
+            output = model(input)
+            loss = criterion(output, target)
     """
-    manager = get_mixed_precision_manager()
-    with manager.autocast():
-        yield
+    if config is not None:
+        with AutomaticMixedPrecision(enabled=enabled, config=config):
+            yield
+    else:
+        manager = get_mixed_precision_manager()
+        with manager.autocast(enabled=enabled, policy=policy):
+            yield
 
 
 @contextmanager
@@ -425,3 +628,220 @@ def mixed_precision_training(model, optimizer, enabled: bool = True):
     scaler = manager.scaler
 
     yield scaler, manager.autocast()
+
+
+# Additional utility functions for enhanced mixed precision support
+
+def get_current_autocast_policy() -> Optional[AutocastPolicy]:
+    """Get the current autocast policy.
+    
+    Returns:
+        Current autocast policy or None if not in autocast context
+    """
+    global _autocast_policy
+    if _autocast_policy is not None:
+        return _autocast_policy.policy
+    return None
+
+
+def should_cast_operation(op_name: str) -> bool:
+    """Check if an operation should be cast to FP16 based on current policy.
+    
+    Args:
+        op_name: Name of the operation
+        
+    Returns:
+        True if operation should be cast to FP16
+    """
+    global _autocast_policy
+    if _autocast_policy is not None:
+        return _autocast_policy.should_cast_op(op_name)
+    return False
+
+
+def create_autocast_config(
+    policy: str = "selective",
+    allowed_ops: Optional[List[str]] = None,
+    blocked_ops: Optional[List[str]] = None,
+    **kwargs
+) -> AutocastConfig:
+    """Create autocast configuration with the specified policy.
+    
+    Args:
+        policy: Autocast policy name ("conservative", "aggressive", "selective", "dynamic")
+        allowed_ops: Operations to explicitly allow in FP16
+        blocked_ops: Operations to explicitly block from FP16
+        **kwargs: Additional configuration options
+        
+    Returns:
+        Configured AutocastConfig instance
+    """
+    try:
+        policy_enum = AutocastPolicy(policy.lower())
+    except ValueError:
+        logger.warning(f"Unknown policy '{policy}', using 'selective'")
+        policy_enum = AutocastPolicy.SELECTIVE
+    
+    return AutocastConfig(
+        policy=policy_enum,
+        allowed_ops=allowed_ops,
+        blocked_ops=blocked_ops,
+        **kwargs
+    )
+
+
+def create_precision_config(
+    enabled: bool = True,
+    loss_scale: float = 65536.0,
+    policy: str = "selective",
+    use_advanced_scaler: bool = True,
+    **kwargs
+) -> PrecisionConfig:
+    """Create a precision configuration with sensible defaults.
+    
+    Args:
+        enabled: Whether mixed precision is enabled
+        loss_scale: Initial loss scale
+        policy: Autocast policy name
+        use_advanced_scaler: Whether to use advanced gradient scaler
+        **kwargs: Additional configuration options
+        
+    Returns:
+        Configured PrecisionConfig instance
+    """
+    autocast_config = create_autocast_config(policy)
+    
+    return PrecisionConfig(
+        enabled=enabled,
+        loss_scale=loss_scale,
+        autocast_config=autocast_config,
+        use_advanced_scaler=use_advanced_scaler,
+        **kwargs
+    )
+
+
+def get_recommended_precision_config(
+    model_type: str = "transformer",
+    model_size: str = "medium",
+    training_stability: str = "normal"
+) -> PrecisionConfig:
+    """Get recommended precision configuration based on model characteristics.
+    
+    Args:
+        model_type: Type of model ("transformer", "cnn", "rnn", "multimodal")
+        model_size: Size of model ("small", "medium", "large", "xlarge")
+        training_stability: Training stability ("stable", "normal", "unstable")
+        
+    Returns:
+        Recommended precision configuration
+    """
+    # Base configuration based on model type
+    if model_type == "transformer":
+        base_config = {
+            "policy": "selective",
+            "loss_scale": 32768.0,
+            "growth_interval": 2000,
+        }
+    elif model_type == "cnn":
+        base_config = {
+            "policy": "aggressive",
+            "loss_scale": 65536.0,
+            "growth_interval": 1500,
+        }
+    elif model_type == "rnn":
+        base_config = {
+            "policy": "conservative",
+            "loss_scale": 16384.0,
+            "growth_interval": 3000,
+        }
+    elif model_type == "multimodal":
+        base_config = {
+            "policy": "selective",
+            "loss_scale": 16384.0,
+            "growth_interval": 2500,
+        }
+    else:
+        base_config = {
+            "policy": "selective",
+            "loss_scale": 32768.0,
+            "growth_interval": 2000,
+        }
+    
+    # Adjust based on model size
+    if model_size == "small":
+        base_config["loss_scale"] *= 2
+        base_config["growth_interval"] = max(base_config["growth_interval"] // 2, 500)
+    elif model_size == "large":
+        base_config["loss_scale"] //= 2
+        base_config["growth_interval"] *= 2
+    elif model_size == "xlarge":
+        base_config["loss_scale"] //= 4
+        base_config["growth_interval"] *= 3
+        base_config["policy"] = "conservative"
+    
+    # Adjust based on training stability
+    if training_stability == "unstable":
+        base_config["loss_scale"] //= 2
+        base_config["growth_interval"] *= 2
+        base_config["backoff_factor"] = 0.25
+        if base_config["policy"] != "conservative":
+            base_config["policy"] = "selective"
+    elif training_stability == "stable":
+        base_config["loss_scale"] *= 2
+        base_config["growth_interval"] = max(base_config["growth_interval"] // 2, 1000)
+        if base_config["policy"] == "conservative":
+            base_config["policy"] = "selective"
+    
+    return create_precision_config(**base_config)
+
+
+# Integration helpers for AMP optimizers
+
+def integrate_amp_optimizer(optimizer, config: Optional[PrecisionConfig] = None):
+    """Integrate an optimizer with AMP capabilities.
+    
+    Args:
+        optimizer: Optimizer to integrate with AMP
+        config: Precision configuration
+        
+    Returns:
+        AMP-integrated optimizer
+    """
+    try:
+        from .amp_optimizer import AMPOptimizerFactory
+        return AMPOptimizerFactory.wrap_optimizer(optimizer, scaler_config=None)
+    except ImportError:
+        logger.warning("AMP optimizer not available, returning original optimizer")
+        return optimizer
+
+
+def create_training_context(
+    model,
+    optimizer,
+    config: Optional[PrecisionConfig] = None,
+    integrate_optimizer: bool = True
+):
+    """Create a complete mixed precision training context.
+    
+    Args:
+        model: Model to train
+        optimizer: Optimizer to use
+        config: Precision configuration
+        integrate_optimizer: Whether to wrap optimizer with AMP capabilities
+        
+    Returns:
+        Tuple of (manager, amp_optimizer, autocast_context)
+    """
+    # Create manager
+    manager = MixedPrecisionManager(config)
+    
+    # Integrate optimizer if requested
+    if integrate_optimizer:
+        amp_optimizer = integrate_amp_optimizer(optimizer, config)
+    else:
+        amp_optimizer = optimizer
+    
+    # Create autocast context
+    autocast_context = manager.autocast()
+    
+    return manager, amp_optimizer, autocast_context

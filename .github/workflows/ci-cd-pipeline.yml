@@ -1,0 +1,405 @@
+# Neural Forge CI/CD Pipeline
+# Comprehensive testing, building, and deployment pipeline
+
+name: Neural Forge CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Lint with flake8
+        run: |
+          flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Format check with black
+        run: black --check --diff src tests
+
+      - name: Type check with mypy
+        run: mypy src --ignore-missing-imports
+
+      - name: Security check with bandit
+        run: bandit -r src -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-report
+          path: bandit-report.json
+
+  # Unit and integration tests
+  test:
+    name: Tests
+    needs: quality
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Exclude some combinations to reduce job count
+          - os: windows-latest
+            python-version: '3.8'
+          - os: windows-latest
+            python-version: '3.9'
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/Library/Caches/pip
+            ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-py${{ matrix.python-version }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Install MLX (macOS only)
+        if: runner.os == 'macOS'
+        run: pip install mlx>=0.5.0
+
+      - name: Install Numba (for JIT backend)
+        run: pip install numba>=0.56.0
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=neural_arch --cov-report=xml --cov-report=html --cov-fail-under=80
+        env:
+          PYTHONPATH: src
+
+      - name: Run MPS tests (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          pytest tests/test_mps_backend_validation.py -v
+        env:
+          PYTHONPATH: src
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+            test-results.xml
+
+  # Performance benchmarks
+  benchmark:
+    name: Performance Benchmarks
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-benchmark
+          pip install -e .
+
+      - name: Run benchmarks
+        run: |
+          python examples/mps_performance_benchmark.py > benchmark-results.txt
+        env:
+          PYTHONPATH: src
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmark-results.txt
+
+  # Docker build and test
+  docker:
+    name: Docker Build & Test
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: false
+          tags: neural-forge:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Build development image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: development
+          push: false
+          tags: neural-forge:dev
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm neural-forge:latest python -c "from neural_arch.core import Tensor; print('Docker test passed')"
+
+      - name: Run tests in Docker
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace neural-forge:dev bash -c "cd /workspace && python -m pytest tests/test_core.py -v"
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  # Documentation build
+  docs:
+    name: Documentation
+    needs: quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install sphinx sphinx-rtd-theme
+          pip install -e .
+
+      - name: Build documentation
+        run: |
+          cd docs/sphinx
+          make html
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: docs/sphinx/_build/html/
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/sphinx/_build/html/
+
+  # Security scanning
+  security:
+    name: Security Scan
+    needs: quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Release and deployment
+  release:
+    name: Release & Deploy
+    needs: [test, docker, docs]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Verify package
+        run: |
+          python -m twine check dist/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        if: github.repository == 'fenilsonani/neural-forge'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload dist/*
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: neuralforge/neural-forge
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # Notification
+  notify:
+    name: Notify
+    needs: [test, docker, docs]
+    runs-on: ubuntu-latest
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+    
+    steps:
+      - name: Notify on success
+        if: ${{ needs.test.result == 'success' && needs.docker.result == 'success' && needs.docs.result == 'success' }}
+        run: |
+          echo "✅ All CI/CD jobs completed successfully!"
+
+      - name: Notify on failure
+        if: ${{ needs.test.result == 'failure' || needs.docker.result == 'failure' || needs.docs.result == 'failure' }}
+        run: |
+          echo "❌ Some CI/CD jobs failed. Check the logs for details."
+
+  # Cleanup
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [quality, test, benchmark, docker, docs, security]
+    
+    steps:
+      - name: Clean up artifacts
+        run: |
+          echo "🧹 Cleaning up temporary artifacts and caches"
+          # This step can be used for cleanup tasks if needed

@@ -609,6 +609,121 @@ BERTLarge = lambda **kwargs: BERT(
 BERTModel = BERT
 
 
+# Model configurations
+BERT_CONFIGS = {
+    "base": {
+        "vocab_size": 30522,
+        "hidden_size": 768,
+        "num_hidden_layers": 12,
+        "num_attention_heads": 12,
+        "intermediate_size": 3072,
+        "max_position_embeddings": 512,
+        "type_vocab_size": 2,
+        "layer_norm_eps": 1e-12,
+        "pad_token_id": 0,
+    },
+    "large": {
+        "vocab_size": 30522,
+        "hidden_size": 1024,
+        "num_hidden_layers": 24,
+        "num_attention_heads": 16,
+        "intermediate_size": 4096,
+        "max_position_embeddings": 512,
+        "type_vocab_size": 2,
+        "layer_norm_eps": 1e-12,
+        "pad_token_id": 0,
+    },
+    "base_cased": {
+        "vocab_size": 28996,  # Different vocab for cased variant
+        "hidden_size": 768,
+        "num_hidden_layers": 12,
+        "num_attention_heads": 12,
+        "intermediate_size": 3072,
+        "max_position_embeddings": 512,
+        "type_vocab_size": 2,
+        "layer_norm_eps": 1e-12,
+        "pad_token_id": 0,
+    },
+    "large_cased": {
+        "vocab_size": 28996,  # Different vocab for cased variant
+        "hidden_size": 1024,
+        "num_hidden_layers": 24,
+        "num_attention_heads": 16,
+        "intermediate_size": 4096,
+        "max_position_embeddings": 512,
+        "type_vocab_size": 2,
+        "layer_norm_eps": 1e-12,
+        "pad_token_id": 0,
+    },
+}
+
+
+@register_model(
+    name="bert_large",
+    description="BERT Large model with 24 layers and bidirectional attention",
+    paper_url="https://arxiv.org/abs/1810.04805",
+    pretrained_configs={
+        "uncased": BERT_CONFIGS["large"],
+        "cased": BERT_CONFIGS["large_cased"],
+    },
+    default_config="uncased",
+    tags=["language", "bert", "transformer", "large"],
+    aliases=["bert-large-uncased"],
+)
+class RegisteredBERTLarge(BERT):
+    def __init__(self, **kwargs):
+        config = BERTConfig(**BERT_CONFIGS["large"])
+        # Override with any provided kwargs
+        for key, value in kwargs.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+        super().__init__(config)
+
+
+@register_model(
+    name="bert_base_cased",
+    description="BERT Base Cased model with bidirectional attention",
+    paper_url="https://arxiv.org/abs/1810.04805",
+    pretrained_configs={"cased": BERT_CONFIGS["base_cased"]},
+    default_config="cased",
+    tags=["language", "bert", "transformer", "cased"],
+    aliases=["bert-base-cased"],
+)
+class RegisteredBERTBaseCased(BERT):
+    def __init__(self, **kwargs):
+        config = BERTConfig(**BERT_CONFIGS["base_cased"])
+        for key, value in kwargs.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+        super().__init__(config)
+
+
+@register_model(
+    name="bert_large_cased",
+    description="BERT Large Cased model with 24 layers and bidirectional attention",
+    paper_url="https://arxiv.org/abs/1810.04805",
+    pretrained_configs={"cased": BERT_CONFIGS["large_cased"]},
+    default_config="cased",
+    tags=["language", "bert", "transformer", "large", "cased"],
+    aliases=["bert-large-cased"],
+)
+class RegisteredBERTLargeCased(BERT):
+    def __init__(self, **kwargs):
+        config = BERTConfig(**BERT_CONFIGS["large_cased"])
+        for key, value in kwargs.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+        super().__init__(config)
+
+
 # Function variants for consistency
 def bert_large(**kwargs):
-    return BERT(hidden_size=1024, num_hidden_layers=24, num_attention_heads=16, **kwargs)
+    return RegisteredBERTLarge(**kwargs)
+
+
+def bert_large_cased(**kwargs):
+    return RegisteredBERTLargeCased(**kwargs)
+
+
+def bert_base_cased(**kwargs):
+    return RegisteredBERTBaseCased(**kwargs)

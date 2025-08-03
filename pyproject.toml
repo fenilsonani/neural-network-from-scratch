@@ -3,9 +3,10 @@ requires = ["setuptools>=45", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "neural-arch"
-description = "Enterprise-grade neural network implementation from scratch"
-authors = [{name = "Neural Architecture Team", email = "contact@neural-arch.ai"}]
+name = "neural-forge"
+description = "Neural Forge - Comprehensive neural network framework built from scratch in NumPy"
+authors = [{name = "Fenil Sonani", email = "fenil@fenilsonani.com"}]
+maintainers = [{name = "Fenil Sonani", email = "fenil@fenilsonani.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"
@@ -28,9 +29,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 keywords = [
-    "neural-networks", "deep-learning", "machine-learning",
-    "artificial-intelligence", "numpy", "from-scratch", 
-    "educational", "transformer", "attention", "enterprise"
+    "neural-forge", "neural-networks", "deep-learning", "machine-learning",
+    "artificial-intelligence", "numpy", "from-scratch", "cnn", "rnn", "lstm",
+    "gru", "transformer", "attention", "educational", "research-tool"
 ]
 dependencies = [
     "numpy>=1.21.0",
@@ -38,6 +39,32 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+# Core optional dependencies
+gpu = [
+    "cupy-cuda11x>=11.0.0; platform_machine == 'x86_64'",
+    "cupy-cuda12x>=12.0.0; platform_machine == 'x86_64'",
+    "mlx>=0.5.0; platform_machine == 'arm64' and sys_platform == 'darwin'",
+]
+jit = [
+    "numba>=0.56.0",
+]
+viz = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "plotly>=5.0.0",
+]
+notebook = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "jupyterlab>=3.0.0",
+]
+web = [
+    "streamlit>=1.28.0",
+    "plotly>=5.0.0",
+    "pandas>=1.3.0",
+]
+
+# Development dependencies
 dev = [
     "pytest>=7.0.0",
     "pytest-xdist>=2.5.0",
@@ -48,31 +75,53 @@ dev = [
     "mypy>=1.0.0",
     "isort>=5.0.0",
     "bandit>=1.7.0",
-    "safety>=2.0.0",
+    "pre-commit>=2.15.0",
 ]
-viz = [
-    "matplotlib>=3.5.0",
-    "seaborn>=0.11.0",
-]
-notebook = [
-    "jupyter>=1.0.0",
-    "ipykernel>=6.0.0",
-]
+
+# Documentation dependencies
 docs = [
     "sphinx>=4.0.0",
     "sphinx-rtd-theme>=1.0.0",
     "sphinx-autodoc-typehints>=1.12.0",
+    "myst-parser>=0.17.0",
+    "nbsphinx>=0.8.0",
+]
+
+# Testing dependencies
+test = [
+    "pytest>=7.0.0",
+    "pytest-xdist>=2.5.0",
+    "pytest-cov>=4.0.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-mock>=3.6.0",
+    "hypothesis>=6.0.0",
+]
+
+# Complete installation
+full = [
+    "neural-forge[gpu,jit,viz,notebook,web]",
+]
+
+# All dependencies (for development)
+all = [
+    "neural-forge[full,dev,docs,test]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/neural-arch"
-Documentation = "https://neural-arch.readthedocs.io/"
-Repository = "https://github.com/your-org/neural-arch.git"
-"Bug Reports" = "https://github.com/your-org/neural-arch/issues"
-Changelog = "https://github.com/your-org/neural-arch/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/fenilsonani/neural-forge"
+Documentation = "https://github.com/fenilsonani/neural-forge/tree/main/docs"
+Repository = "https://github.com/fenilsonani/neural-forge.git"
+"Bug Reports" = "https://github.com/fenilsonani/neural-forge/issues"
+Changelog = "https://github.com/fenilsonani/neural-forge/blob/main/CHANGELOG.md"
 
 [project.scripts]
-neural-arch = "neural_arch.cli.main:main"
+neural-forge = "neural_arch.cli.main:main"
+
+[project.entry-points."neural_arch.backends"]
+numpy = "neural_arch.backends.numpy_backend:NumpyBackend"
+mps = "neural_arch.backends.mps_backend:MPSBackend"
+cuda = "neural_arch.backends.cuda_backend:CudaBackend"
+jit = "neural_arch.backends.jit_backend:JITBackend"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

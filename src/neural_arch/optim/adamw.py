@@ -152,6 +152,45 @@ class AdamW(Optimizer):
                 f"Learning rate scheduler: {lr_scheduler} with params {self.lr_scheduler_params}"
             )
 
+    def step_with_mixed_precision(self, scaler=None):
+        """Optimizer step with mixed precision support."""
+        if scaler is not None:
+            # Use provided scaler
+            success = scaler.step(self)
+            if success:
+                scaler.update()
+            return success
+        else:
+            # Try automatic mixed precision
+            try:
+                from ..optimization.mixed_precision import get_mixed_precision_manager
+                
+                mp_manager = get_mixed_precision_manager()
+                if mp_manager.config.enabled:
+                    return mp_manager.scaler.step(self)
+            except Exception:
+                pass
+            
+            # Fallback to normal step
+            self.step()
+            return True
+
+    def create_amp_version(self, scaler_config=None):
+        """Create an AMP-aware version of this optimizer.
+        
+        Args:
+            scaler_config: Configuration for gradient scaler
+            
+        Returns:
+            AMP-aware optimizer wrapper
+        """
+        try:
+            from ..optimization.amp_optimizer import AMPOptimizerFactory
+            return AMPOptimizerFactory.wrap_optimizer(self, scaler_config=scaler_config)
+        except ImportError:
+            logger.warning("AMP optimizer not available, returning self")
+            return self
+
     def _validate_scheduler_params(self) -> None:
         """Validate learning rate scheduler parameters."""
         if self.lr_scheduler == "cosine":

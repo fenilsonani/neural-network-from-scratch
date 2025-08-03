@@ -1,0 +1,133 @@
+# Docker ignore file for Neural Forge
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation build
+docs/_build/
+docs/sphinx/_build/
+site/
+
+# Testing
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.tox/
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+*.log
+logs/
+
+# Data and models (usually too large for Docker images)
+data/
+datasets/
+models/
+*.pkl
+*.pth
+*.pt
+*.onnx
+*.h5
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Cache
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Backup files
+*.bak
+*.backup
+
+# Large files that shouldn't be in Docker images
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Benchmarks results
+benchmarks/results/
+results/
+
+# Monitoring configs (will be mounted)
+monitoring/
+
+# Nginx config (will be mounted)
+nginx.conf

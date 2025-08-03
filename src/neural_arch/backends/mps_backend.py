@@ -113,7 +113,7 @@ class MPSBackend(Backend):
         dtype: Optional[Any] = None,
     ) -> Any:
         key = mx.random.key(np.random.randint(0, 2**32))
-        result = mx.random.uniform(shape, low=low, high=high, key=key)
+        result = mx.random.uniform(low=low, high=high, shape=shape, key=key)
         if dtype:
             result = result.astype(self._convert_dtype(dtype))
         return result

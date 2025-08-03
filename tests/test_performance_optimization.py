@@ -518,7 +518,7 @@ class TestOptimizationAlgorithmPerformance:
             
             # Simulate loss computation
             loss_data = np.sum(output.data ** 2)
-            loss = Tensor(np.array([[loss_data]), requires_grad=True)
+            loss = Tensor(np.array([loss_data]), requires_grad=True)
             
             # Measure optimizer step time
             with PerformanceTimer(f"{opt_name} step") as timer:
@@ -589,7 +589,7 @@ class TestCacheEfficiency:
         
         # Later runs should be faster due to cache warming
         first_time = times[0]
-        avg_later_time = sum(times[2:) / len(times[2:)  # Skip first warm-up run
+        avg_later_time = sum(times[2:]) / len(times[2:])  # Skip first warm-up run
         
         cache_efficiency = first_time / avg_later_time
         assert cache_efficiency > 0.8, \

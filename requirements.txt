@@ -10,6 +10,7 @@ pytest>=7.0.0            # Optional: Advanced test framework with fixtures
 pytest-xdist>=2.5.0      # Optional: Parallel test execution
 pytest-cov>=4.0.0        # Optional: Test coverage analysis
 pytest-benchmark>=4.0.0  # Optional: Performance benchmarking integration
+hypothesis>=6.0.0         # Optional: Property-based testing framework
 
 # Optional development tools (not required for core functionality)  
 black>=22.0.0             # Optional: Code formatting

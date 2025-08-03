@@ -1,0 +1,218 @@
+# Neural Forge Docker Compose Configuration
+# Provides multiple deployment scenarios for development and production
+
+version: '3.8'
+
+services:
+  # Production Neural Forge service
+  neural-forge-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: neural-forge-production
+    restart: unless-stopped
+    environment:
+      - NEURAL_FORGE_ENV=production
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    volumes:
+      - ./models:/home/neural-forge/models
+      - ./data:/home/neural-forge/data
+    networks:
+      - neural-forge-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "from neural_arch.core import Tensor; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development environment
+  neural-forge-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: neural-forge-development
+    volumes:
+      - .:/home/neural-forge/neural-forge
+      - ./models:/home/neural-forge/models
+      - ./data:/home/neural-forge/data
+    environment:
+      - NEURAL_FORGE_ENV=development
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    networks:
+      - neural-forge-network
+    stdin_open: true
+    tty: true
+
+  # Jupyter Lab server
+  neural-forge-jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: jupyter
+    container_name: neural-forge-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/neural-forge/neural-forge
+      - ./notebooks:/home/neural-forge/notebooks
+      - ./models:/home/neural-forge/models
+      - ./data:/home/neural-forge/data
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=neural-forge-token
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+
+  # GPU-accelerated service (requires NVIDIA Docker runtime)
+  neural-forge-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: gpu
+    container_name: neural-forge-gpu
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - NEURAL_FORGE_ENV=production
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    volumes:
+      - ./models:/home/neural-forge/models
+      - ./data:/home/neural-forge/data
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+
+  # Training service for batch jobs
+  neural-forge-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: neural-forge-training
+    volumes:
+      - ./models:/home/neural-forge/models
+      - ./data:/home/neural-forge/data
+      - ./training_configs:/home/neural-forge/configs
+    environment:
+      - NEURAL_FORGE_ENV=training
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    networks:
+      - neural-forge-network
+    command: ["python", "examples/training/cnn_layers_training.py"]
+    restart: "no"
+
+  # Testing service
+  neural-forge-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: neural-forge-test
+    volumes:
+      - .:/home/neural-forge/neural-forge
+    environment:
+      - NEURAL_FORGE_ENV=testing
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    networks:
+      - neural-forge-network
+    command: ["python", "-m", "pytest", "tests/", "-v", "--cov=neural_arch"]
+    restart: "no"
+
+  # Benchmark service
+  neural-forge-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: neural-forge-benchmark
+    volumes:
+      - ./benchmarks:/home/neural-forge/benchmarks
+      - ./results:/home/neural-forge/results
+    environment:
+      - NEURAL_FORGE_ENV=benchmark
+      - PYTHONPATH=/home/neural-forge/neural-forge/src
+    networks:
+      - neural-forge-network
+    command: ["python", "examples/mps_performance_benchmark.py"]
+    restart: "no"
+
+  # Documentation server
+  docs-server:
+    image: nginx:alpine
+    container_name: neural-forge-docs
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docs:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: neural-forge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # PostgreSQL for metadata storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: neural-forge-postgres
+    environment:
+      - POSTGRES_DB=neural_forge
+      - POSTGRES_USER=neural_forge
+      - POSTGRES_PASSWORD=neural_forge_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+
+  # Monitoring with Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: neural-forge-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - neural-forge-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+networks:
+  neural-forge-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local

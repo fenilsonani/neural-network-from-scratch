@@ -9,6 +9,8 @@ from .bert import (
     BERTModel,
     bert_base,
     bert_large,
+    bert_base_cased,
+    bert_large_cased,
 )
 from .gpt2 import (
     GPT2,
@@ -27,10 +29,25 @@ from .roberta import (
     RoBERTa,
     RoBERTaBase,
     RoBERTaForMaskedLM,
+    RoBERTaForSequenceClassification,
     RoBERTaLarge,
     RoBERTaModel,
     roberta_base,
     roberta_large,
+)
+from .deberta import (
+    DeBERTa,
+    DeBERTaBase,
+    DeBERTaForMaskedLM,
+    DeBERTaForSequenceClassification,
+    DeBERTaLarge,
+    DeBERTaModel,
+    DeBERTaV3Base,
+    DeBERTaV3Large,
+    deberta_base,
+    deberta_large,
+    deberta_v3_base,
+    deberta_v3_large,
 )
 from .t5 import (
     T5,
@@ -70,6 +87,8 @@ __all__ = [
     "BERTLarge",
     "bert_base",
     "bert_large",
+    "bert_base_cased",
+    "bert_large_cased",
     # T5
     "T5",
     "T5Model",
@@ -88,8 +107,22 @@ __all__ = [
     "RoBERTa",
     "RoBERTaModel",
     "RoBERTaForMaskedLM",
+    "RoBERTaForSequenceClassification",
     "RoBERTaBase",
     "RoBERTaLarge",
     "roberta_base",
     "roberta_large",
+    # DeBERTa
+    "DeBERTa",
+    "DeBERTaModel",
+    "DeBERTaForMaskedLM",
+    "DeBERTaForSequenceClassification",
+    "DeBERTaBase",
+    "DeBERTaLarge",
+    "DeBERTaV3Base",
+    "DeBERTaV3Large",
+    "deberta_base",
+    "deberta_large",
+    "deberta_v3_base",
+    "deberta_v3_large",
 ]

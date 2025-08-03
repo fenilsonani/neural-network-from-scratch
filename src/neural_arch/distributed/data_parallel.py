@@ -194,10 +194,13 @@ class DistributedDataParallel(Module):
         return outputs
 
     def _register_hooks(self):
-        """Register backward hooks for gradient synchronization."""
-        for param in self.module.parameters():
-            if param.requires_grad:
-                param.register_hook(self._gradient_hook)
+        """Register backward hooks for gradient synchronization.
+        
+        Note: Automatic gradient hooks are not implemented in the current version.
+        Users must call sync_gradients() manually after backward().
+        """
+        # TODO: Implement automatic gradient hooks when Parameter class supports them
+        logger.debug("Automatic gradient hooks not implemented - use manual sync_gradients()")
 
     def _gradient_hook(self, grad: Tensor) -> Tensor:
         """Hook called when gradients are computed."""
