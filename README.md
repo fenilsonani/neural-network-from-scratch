@@ -1,11 +1,11 @@
-# Neural Architecture Framework
+# Neural Forge
 
-[![CI](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/fenilsonani/neural-network-from-scratch/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-98%25-brightgreen)](https://github.com/fenilsonani/neural-network-from-scratch)
+[![CI](https://github.com/fenilsonani/neural-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-98%25-brightgreen)](https://github.com/fenilsonani/neural-forge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 
-A neural network implementation built from scratch using NumPy, designed for educational purposes and research experimentation.
+**Forge neural networks from first principles.** A comprehensive neural network framework built from scratch in NumPy. Craft CNN, RNN, and Transformer architectures with complete control, extensive testing, and educational clarity.
 
 ## Project Status
 
@@ -59,8 +59,8 @@ This framework is designed to be:
 
 ### Quick Start (Recommended)
 ```bash
-git clone https://github.com/fenilsonani/neural-network-from-scratch.git
-cd neural-network-from-scratch
+git clone https://github.com/fenilsonani/neural-forge.git
+cd neural-forge
 pip install -e .
 ```
 
@@ -70,8 +70,8 @@ pip install -e .
 **Works out of the box** - Tensor operations, neural layers, training, and CPU inference
 ```bash
 # Clone and install core package
-git clone https://github.com/fenilsonani/neural-network-from-scratch.git
-cd neural-network-from-scratch
+git clone https://github.com/fenilsonani/neural-forge.git
+cd neural-forge
 pip install -e .
 
 # Verify installation
