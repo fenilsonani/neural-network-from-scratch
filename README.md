@@ -275,7 +275,7 @@ python -c "import mlx.core as mx; print('MLX version:', mx.__version__)"
 **Import Errors**
 ```bash
 # Ensure you're in the right directory and using editable install
-cd neural-network-from-scratch
+cd neural-forge
 pip install -e .
 
 # Check Python path

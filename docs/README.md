@@ -181,7 +181,7 @@ We welcome documentation improvements! See the [Contributing Guide](development/
 
 ## Getting Help
 
-- **Issues**: Report documentation issues on [GitHub](https://github.com/fenilsonani/neural-network-from-scratch/issues)
+- **Issues**: Report documentation issues on [GitHub](https://github.com/fenilsonani/neural-forge/issues)
 - **Working Examples**: Check the verified examples in [API Reference](api/reference.md)
 - **Test Suite**: Run `pytest` to verify your setup and see what's actually working
 - **Implementation Status**: Check this documentation index for current status

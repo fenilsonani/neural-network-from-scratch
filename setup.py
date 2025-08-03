@@ -40,18 +40,18 @@ def get_requirements():
 
 setup(
     # Package metadata
-    name="neural-arch",
+    name="neural-forge",
     version=get_version(),
-    description="Educational neural network implementation from scratch using NumPy",
+    description="Neural Forge - Comprehensive neural network framework built from scratch in NumPy",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     author="Fenil Sonani",
     author_email="fenil@fenilsonani.com",
-    url="https://github.com/fenilsonani/neural-network-from-scratch",
+    url="https://github.com/fenilsonani/neural-forge",
     project_urls={
-        "Bug Reports": "https://github.com/fenilsonani/neural-network-from-scratch/issues",
-        "Source": "https://github.com/fenilsonani/neural-network-from-scratch",
-        "Documentation": "https://github.com/fenilsonani/neural-network-from-scratch/tree/main/docs",
+        "Bug Reports": "https://github.com/fenilsonani/neural-forge/issues",
+        "Source": "https://github.com/fenilsonani/neural-forge",
+        "Documentation": "https://github.com/fenilsonani/neural-forge/tree/main/docs",
     },
     
     # Package configuration
@@ -97,7 +97,7 @@ setup(
     # Entry points for CLI
     entry_points={
         "console_scripts": [
-            "neural-arch=neural_arch.cli.main:main",
+            "neural-forge=neural_arch.cli.main:main",
         ],
     },
     
@@ -123,9 +123,9 @@ setup(
     
     # Additional metadata
     keywords=[
-        "neural-networks", "deep-learning", "machine-learning",
-        "artificial-intelligence", "numpy", "from-scratch",
-        "educational", "transformer", "attention", "enterprise"
+        "neural-forge", "neural-networks", "deep-learning", "machine-learning",
+        "artificial-intelligence", "numpy", "from-scratch", "cnn", "rnn", "lstm",
+        "gru", "transformer", "attention", "educational", "research-tool"
     ],
     license="MIT",
     platforms=["any"],
