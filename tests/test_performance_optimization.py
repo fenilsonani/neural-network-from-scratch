@@ -787,7 +787,7 @@ class TestScalabilityBenchmarks:
             largest_batch = batch_sizes_tested[-1]
             
             efficiency_gain = (efficiency_data[smallest_batch]['time_per_sample'] / 
-                             efficiency_data[largest_batch]['time_per_sample')
+                             efficiency_data[largest_batch]['time_per_sample']
             
             assert efficiency_gain > 1.0, \
                 f"Batch processing not efficient: {efficiency_gain:.2f}x speedup"

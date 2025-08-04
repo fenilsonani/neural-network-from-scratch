@@ -379,7 +379,6 @@ class MixedPrecisionManager:
 
     def is_autocast_enabled(self) -> bool:
         """Check if we're currently in an autocast context."""
-        global _autocast_enabled
         return _autocast_enabled and self.config.enabled
 
     @contextmanager
@@ -573,7 +572,6 @@ def set_mixed_precision_config(config: PrecisionConfig):
 
 def is_autocast_enabled() -> bool:
     """Global function to check if autocast is currently enabled."""
-    global _autocast_enabled
     return _autocast_enabled
 
 
@@ -638,7 +636,7 @@ def get_current_autocast_policy() -> Optional[AutocastPolicy]:
     Returns:
         Current autocast policy or None if not in autocast context
     """
-    global _autocast_policy
+    pass  # Policy management handled elsewhere
     if _autocast_policy is not None:
         return _autocast_policy.policy
     return None
@@ -653,7 +651,7 @@ def should_cast_operation(op_name: str) -> bool:
     Returns:
         True if operation should be cast to FP16
     """
-    global _autocast_policy
+    pass  # Policy management handled elsewhere
     if _autocast_policy is not None:
         return _autocast_policy.should_cast_op(op_name)
     return False

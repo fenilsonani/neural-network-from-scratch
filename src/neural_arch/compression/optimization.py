@@ -367,8 +367,8 @@ class ModelOptimizer:
         if quant_config is None:
             from .quantization import QuantizationType, QuantizationDataType
             quant_config = QuantizationConfig(
-                dtype=QuantizationDataType.INT8,
-                quantization_type=QuantizationType.DYNAMIC
+                dtype='int8',
+                quantization_type='dynamic'
             )
         
         # Apply quantization
@@ -641,8 +641,8 @@ def optimize_for_inference(model: Module,
             target_size_mb=10.0,  # Mobile-friendly size
             pruning_config=PruningConfig(sparsity_ratio=0.7),
             quantization_config=QuantizationConfig(
-                dtype=QuantizationDataType.INT8,
-                quantization_type=QuantizationType.DYNAMIC
+                dtype='int8',
+                quantization_type='dynamic'
             )
         )
     elif optimization_level == 1:
@@ -650,8 +650,8 @@ def optimize_for_inference(model: Module,
             use_pruning=False,
             use_quantization=True,
             quantization_config=QuantizationConfig(
-                dtype=QuantizationDataType.INT8,
-                quantization_type=QuantizationType.DYNAMIC
+                dtype='int8',
+                quantization_type='dynamic'
             )
         )
     else:
