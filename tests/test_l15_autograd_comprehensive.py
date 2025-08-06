@@ -24,18 +24,8 @@ import pytest
 from src.neural_arch.core.autograd import (
     GradientTape,
     Variable,
-    Operation,
-    OperationType,
-    FunctionContext,
-    no_grad,
-    enable_grad,
-    grad,
-    jacrev,
-    hessian,
-    vmap,
-    jit,
-    value_and_grad,
-    test_autograd_system
+    OpType,
+    TapeEntry
 )
 
 

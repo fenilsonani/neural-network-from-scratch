@@ -169,6 +169,50 @@ __all__ = [
 if _optimization_config_available:
     __all__.extend(["configure", "get_optimization_config", "reset_config"])
 
+# Enterprise components (optional imports for advanced users)
+try:
+    from .distributed.distributed_system import DistributedTrainingOrchestrator
+    from .backends.cuda_kernels_optimized import OptimizedCUDAKernels
+    from .core.autograd import GradientTape
+    from .core.memory_manager import AdvancedMemoryManager
+    from .monitoring.observability import MetricsCollector, DistributedTracer
+    from .optimization.advanced_optimizers import SophiaOptimizer, LionOptimizer
+    from .reliability.fault_tolerance import ElasticTrainingManager, CircuitBreaker, SelfHealingSystem
+    from .benchmarks.comprehensive_benchmark import BenchmarkRunner, PerformanceProfiler, StatisticalAnalyzer
+    
+    # Enterprise components available
+    _enterprise_available = True
+    
+    # Add to public API
+    __all__.extend([
+        # Distributed Training
+        "DistributedTrainingOrchestrator",
+        # CUDA Optimization
+        "OptimizedCUDAKernels",
+        # Advanced Autograd
+        "GradientTape",
+        # Memory Management
+        "AdvancedMemoryManager",
+        # Monitoring
+        "MetricsCollector",
+        "DistributedTracer",
+        # Advanced Optimizers
+        "SophiaOptimizer",
+        "LionOptimizer",
+        # Fault Tolerance
+        "ElasticTrainingManager",
+        "CircuitBreaker", 
+        "SelfHealingSystem",
+        # Benchmarking
+        "BenchmarkRunner",
+        "PerformanceProfiler",
+        "StatisticalAnalyzer",
+    ])
+    
+except ImportError as e:
+    # Enterprise components not available
+    _enterprise_available = False
+
 # Enterprise features configuration
 import logging
 
@@ -199,3 +243,37 @@ def run_cli(*args):
 
 # Add CLI to public API
 __all__.append("run_cli")
+
+
+def is_enterprise_available():
+    """Check if enterprise components are available.
+    
+    Returns:
+        bool: True if all enterprise components are available
+    """
+    return _enterprise_available
+
+
+def list_enterprise_components():
+    """List available enterprise components.
+    
+    Returns:
+        dict: Dictionary of component categories and their classes
+    """
+    if not _enterprise_available:
+        return {}
+    
+    return {
+        "distributed": ["DistributedTrainingOrchestrator"],
+        "cuda_optimization": ["OptimizedCUDAKernels"],
+        "advanced_autograd": ["GradientTape"],
+        "memory_management": ["AdvancedMemoryManager"],
+        "monitoring": ["MetricsCollector", "DistributedTracer"],
+        "advanced_optimizers": ["SophiaOptimizer", "LionOptimizer"],
+        "fault_tolerance": ["ElasticTrainingManager", "CircuitBreaker", "SelfHealingSystem"],
+        "benchmarking": ["BenchmarkRunner", "PerformanceProfiler", "StatisticalAnalyzer"],
+    }
+
+
+# Add enterprise utility functions to public API
+__all__.extend(["is_enterprise_available", "list_enterprise_components"])
