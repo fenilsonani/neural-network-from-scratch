@@ -406,15 +406,15 @@ class ZeroCopyTensor:
         
         # Calculate size and strides
         self.size = np.prod(shape)
-        self.strides = self._compute_strides(shape, dtype.itemsize)
-        self.nbytes = self.size * dtype.itemsize
+        self.strides = self._compute_strides(shape, np.dtype(dtype).itemsize)
+        self.nbytes = self.size * np.dtype(dtype).itemsize
         
         # Create memory view
         if isinstance(data, np.ndarray):
             self._data = data
         else:
             # Create view from memory address
-            self._data = self._create_view_from_address(data, shape, dtype)
+            self._data = self._create_view_from_address(data, shape, np.dtype(dtype))
         
         # Update reference count
         if memory_block:
@@ -423,7 +423,7 @@ class ZeroCopyTensor:
     def _compute_strides(self, shape: Tuple[int, ...], itemsize: int) -> Tuple[int, ...]:
         """Compute strides for C-contiguous layout."""
         strides = []
-        stride = itemsize
+        stride = int(itemsize)
         for dim in reversed(shape):
             strides.append(stride)
             stride *= dim
@@ -579,7 +579,7 @@ class AdvancedMemoryManager:
         Returns:
             Zero-copy tensor
         """
-        size = np.prod(shape) * dtype.itemsize
+        size = int(np.prod(shape)) * np.dtype(dtype).itemsize
         
         # Get appropriate pool
         pool = self.pools.get(memory_type)
