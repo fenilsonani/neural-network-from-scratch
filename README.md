@@ -1,9 +1,31 @@
 # Neural Forge
 
+<div align="center">
+
 [![CI](https://github.com/fenilsonani/neural-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/fenilsonani/neural-forge/actions/workflows/ci-cd-pipeline.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/ci-cd-pipeline.yml)
+[![Security](https://github.com/fenilsonani/neural-forge/actions/workflows/security.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/security.yml)
+[![Performance](https://github.com/fenilsonani/neural-forge/actions/workflows/performance.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/performance.yml)
+[![Docs](https://github.com/fenilsonani/neural-forge/actions/workflows/docs.yml/badge.svg)](https://github.com/fenilsonani/neural-forge/actions/workflows/docs.yml)
+
 [![Coverage](https://img.shields.io/badge/Coverage-98%25-brightgreen)](https://github.com/fenilsonani/neural-forge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![PyPI](https://img.shields.io/pypi/v/neural-forge)](https://pypi.org/project/neural-forge/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/neural-forge)](https://pypi.org/project/neural-forge/)
+
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Type Checked: mypy](https://img.shields.io/badge/type--checked-mypy-blue)](https://mypy.readthedocs.io/)
+[![Linting: flake8](https://img.shields.io/badge/linting-flake8-yellowgreen)](https://flake8.pycqa.org/)
+[![Security: bandit](https://img.shields.io/badge/security-bandit-yellow)](https://bandit.readthedocs.io/)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+
+[![GitHub stars](https://img.shields.io/github/stars/fenilsonani/neural-forge?style=social)](https://github.com/fenilsonani/neural-forge/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/fenilsonani/neural-forge?style=social)](https://github.com/fenilsonani/neural-forge/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/fenilsonani/neural-forge)](https://github.com/fenilsonani/neural-forge/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/fenilsonani/neural-forge)](https://github.com/fenilsonani/neural-forge/pulls)
+
+</div>
 
 **Forge neural networks from first principles.** A comprehensive neural network framework built from scratch in NumPy. Craft CNN, RNN, and Transformer architectures with complete control, extensive testing, and educational clarity.
 

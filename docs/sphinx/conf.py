@@ -10,9 +10,9 @@ sys.path.insert(0, os.path.abspath('../../src'))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Neural Architecture'
-copyright = '2025, Neural Architecture Team'
-author = 'Neural Architecture Team'
+project = 'Neural Forge'
+copyright = '2025, Fenil Sonani'
+author = 'Fenil Sonani'
 release = '2.0.0'
 version = '2.0.0'
 
