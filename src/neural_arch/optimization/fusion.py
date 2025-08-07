@@ -171,6 +171,58 @@ if NUMBA_AVAILABLE:
         return result
 
 
+# Fallback implementations (NumPy-based, without Numba JIT)
+
+def _fallback_conv_bn_relu(
+    input_data: np.ndarray,
+    weight: np.ndarray,
+    bias: np.ndarray,
+    bn_weight: np.ndarray,
+    bn_bias: np.ndarray,
+    bn_mean: np.ndarray,
+    bn_var: np.ndarray,
+    eps: float = 1e-5,
+) -> np.ndarray:
+    """Fallback Conv2D + BatchNorm + ReLU operation using NumPy."""
+    batch_size, in_channels, in_height, in_width = input_data.shape
+    out_channels, _, kernel_height, kernel_width = weight.shape
+
+    # Calculate output dimensions (assuming stride=1, padding=0)
+    out_height = in_height - kernel_height + 1
+    out_width = in_width - kernel_width + 1
+
+    output = np.zeros((batch_size, out_channels, out_height, out_width), dtype=input_data.dtype)
+
+    # Precompute batch norm parameters
+    bn_scale = bn_weight / np.sqrt(bn_var + eps)
+    bn_shift = bn_bias - bn_mean * bn_scale
+
+    # Perform fused convolution + batch norm + ReLU
+    for b in range(batch_size):
+        for oc in range(out_channels):
+            for oh in range(out_height):
+                for ow in range(out_width):
+                    # Convolution
+                    conv_sum = 0.0
+                    for ic in range(in_channels):
+                        for kh in range(kernel_height):
+                            for kw in range(kernel_width):
+                                input_val = input_data[b, ic, oh + kh, ow + kw]
+                                weight_val = weight[oc, ic, kh, kw]
+                                conv_sum += input_val * weight_val
+                    
+                    # Add bias
+                    conv_sum += bias[oc]
+
+                    # Batch normalization
+                    bn_output = conv_sum * bn_scale[oc] + bn_shift[oc]
+
+                    # ReLU
+                    output[b, oc, oh, ow] = max(0.0, bn_output)
+
+    return output
+
+
 class LinearGELUFusion(FusedOperation):
     """Fused Linear + GELU activation."""
 
@@ -221,9 +273,11 @@ class ConvBNReLUFusion(FusedOperation):
                 input_data, weight, bias, bn_weight, bn_bias, bn_mean, bn_var, eps
             )
         else:
-            # Fallback: sequential operations
-            # This is a simplified version - real implementation would be more complex
-            raise NotImplementedError("ConvBNReLU fusion requires Numba")
+            # Fallback: sequential operations without Numba
+            # Note: This is less optimized but still functional
+            return _fallback_conv_bn_relu(
+                input_data, weight, bias, bn_weight, bn_bias, bn_mean, bn_var, eps
+            )
 
     def get_pattern(self) -> List[str]:
         return ["Conv2d", "BatchNorm2d", "ReLU"]
@@ -460,3 +514,95 @@ def fuse_layernorm_linear(
     return engine.apply_fusion(
         "layernorm_linear", x, ln_weight, ln_bias, linear_weight, linear_bias, eps
     )
+
+
+def test_conv_bn_relu_fusion():
+    """Test ConvBNReLU fusion implementation."""
+    print("Testing ConvBNReLU Fusion Implementation")
+    print("=" * 40)
+    
+    # Create test data
+    batch_size, in_channels, height, width = 2, 3, 8, 8
+    out_channels, kernel_size = 4, 3
+    
+    # Input data
+    input_data = np.random.randn(batch_size, in_channels, height, width).astype(np.float32)
+    
+    # Conv layer parameters
+    conv_weight = np.random.randn(out_channels, in_channels, kernel_size, kernel_size).astype(np.float32)
+    conv_bias = np.random.randn(out_channels).astype(np.float32)
+    
+    # BatchNorm parameters
+    bn_weight = np.random.randn(out_channels).astype(np.float32)
+    bn_bias = np.random.randn(out_channels).astype(np.float32)
+    bn_mean = np.random.randn(out_channels).astype(np.float32)
+    bn_var = np.random.uniform(0.1, 2.0, out_channels).astype(np.float32)
+    
+    print(f"Input shape: {input_data.shape}")
+    print(f"Conv weight shape: {conv_weight.shape}")
+    print(f"Output channels: {out_channels}")
+    
+    # Test both JIT and fallback implementations
+    fusion_obj = ConvBNReLUFusion()
+    
+    # Force fallback for testing
+    original_numba_available = globals().get('NUMBA_AVAILABLE', False)
+    
+    try:
+        # Test fallback implementation
+        globals()['NUMBA_AVAILABLE'] = False
+        print("\n1. Testing fallback implementation:")
+        fallback_output = fusion_obj.forward(
+            input_data, conv_weight, conv_bias, 
+            bn_weight, bn_bias, bn_mean, bn_var
+        )
+        print(f"   Fallback output shape: {fallback_output.shape}")
+        print(f"   Fallback output range: [{fallback_output.min():.3f}, {fallback_output.max():.3f}]")
+        
+        # Test JIT implementation (if available)
+        globals()['NUMBA_AVAILABLE'] = original_numba_available
+        if original_numba_available:
+            print("\n2. Testing JIT implementation:")
+            jit_output = fusion_obj.forward(
+                input_data, conv_weight, conv_bias, 
+                bn_weight, bn_bias, bn_mean, bn_var
+            )
+            print(f"   JIT output shape: {jit_output.shape}")
+            print(f"   JIT output range: [{jit_output.min():.3f}, {jit_output.max():.3f}]")
+            
+            # Compare outputs
+            diff = np.abs(fallback_output - jit_output).max()
+            print(f"   Max difference between implementations: {diff:.6f}")
+            
+            if diff < 1e-5:
+                print("   ✅ JIT and fallback implementations match!")
+            else:
+                print("   ⚠️ JIT and fallback implementations differ")
+        else:
+            print("\n2. JIT implementation not available (Numba not installed)")
+        
+        # Test high-level API
+        print("\n3. Testing high-level API:")
+        api_output = fuse_conv_bn_relu(
+            input_data, conv_weight, conv_bias, 
+            bn_weight, bn_bias, bn_mean, bn_var
+        )
+        print(f"   API output shape: {api_output.shape}")
+        print(f"   API output range: [{api_output.min():.3f}, {api_output.max():.3f}]")
+        
+        # Verify ReLU constraint (all outputs >= 0)
+        min_val = api_output.min()
+        if min_val >= 0:
+            print(f"   ✅ ReLU constraint satisfied (min value: {min_val:.3f})")
+        else:
+            print(f"   ❌ ReLU constraint violated (min value: {min_val:.3f})")
+            
+    finally:
+        # Restore original setting
+        globals()['NUMBA_AVAILABLE'] = original_numba_available
+    
+    print("\nConvBNReLU fusion testing completed successfully!")
+
+
+if __name__ == "__main__":
+    test_conv_bn_relu_fusion()

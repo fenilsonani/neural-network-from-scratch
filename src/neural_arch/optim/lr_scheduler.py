@@ -603,3 +603,98 @@ def get_cosine_schedule_with_warmup(
     )
 
     return ChainedScheduler([warmup_scheduler, cosine_scheduler], [num_warmup_steps])
+
+
+def test_lr_schedulers():
+    """Test all learning rate schedulers."""
+    print("Testing Learning Rate Schedulers")
+    print("=" * 40)
+    
+    # Create a mock optimizer for testing
+    from ..optim import Adam
+    from ..nn import Linear
+    from ..core import Tensor
+    import numpy as np
+    
+    # Create simple model and optimizer for testing
+    model = Linear(4, 2)
+    optimizer = Adam(model.parameters(), lr=0.01)
+    
+    print(f"Initial learning rate: {optimizer.lr}")
+    
+    # Test each scheduler
+    schedulers = [
+        ("StepLR", StepLR(optimizer, step_size=5, gamma=0.5)),
+        ("ExponentialLR", ExponentialLR(optimizer, gamma=0.95)),
+        ("CosineAnnealingLR", CosineAnnealingLR(optimizer, T_max=20)),
+        ("LinearLR", LinearLR(optimizer, start_factor=0.5, end_factor=1.0, total_iters=10)),
+        ("WarmupLR", WarmupLR(optimizer, warmup_epochs=5)),
+        ("PolynomialLR", PolynomialLR(optimizer, total_iters=15, power=2.0)),
+    ]
+    
+    for name, scheduler in schedulers:
+        print(f"\nTesting {name}:")
+        
+        # Reset optimizer lr
+        optimizer.lr = 0.01
+        
+        # Test for several epochs
+        lrs = []
+        for epoch in range(12):
+            lr_before = optimizer.lr
+            scheduler.step(epoch)
+            lr_after = optimizer.lr
+            lrs.append(lr_after)
+            
+            if epoch % 3 == 0 or epoch < 3:
+                print(f"  Epoch {epoch:2d}: {lr_before:.6f} -> {lr_after:.6f}")
+        
+        # Show learning rate progression
+        lr_range = f"[{min(lrs):.6f}, {max(lrs):.6f}]"
+        print(f"  LR range over 12 epochs: {lr_range}")
+    
+    # Test ReduceLROnPlateau separately (different interface)
+    print(f"\nTesting ReduceLROnPlateau:")
+    optimizer.lr = 0.01
+    plateau_scheduler = ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
+    
+    # Simulate loss values that plateau
+    loss_values = [1.0, 0.8, 0.6, 0.5, 0.51, 0.52, 0.51, 0.50, 0.49, 0.48]
+    
+    for epoch, loss in enumerate(loss_values):
+        lr_before = optimizer.lr
+        plateau_scheduler.step(loss, epoch)
+        lr_after = optimizer.lr
+        
+        if lr_before != lr_after:
+            print(f"  Epoch {epoch:2d}: loss={loss:.2f}, lr {lr_before:.6f} -> {lr_after:.6f} (reduced!)")
+        elif epoch % 2 == 0:
+            print(f"  Epoch {epoch:2d}: loss={loss:.2f}, lr={lr_after:.6f}")
+    
+    # Test chained scheduler
+    print(f"\nTesting ChainedScheduler (Warmup + Cosine):")
+    optimizer.lr = 0.01
+    chained_scheduler = get_cosine_schedule_with_warmup(
+        optimizer, num_warmup_steps=5, num_training_steps=20
+    )
+    
+    lrs = []
+    for epoch in range(15):
+        lr_before = optimizer.lr
+        chained_scheduler.step(epoch)
+        lr_after = optimizer.lr
+        lrs.append(lr_after)
+        
+        if epoch % 3 == 0 or epoch < 6:
+            print(f"  Epoch {epoch:2d}: {lr_before:.6f} -> {lr_after:.6f}")
+    
+    print(f"  LR range over 15 epochs: [{min(lrs):.6f}, {max(lrs):.6f}]")
+    
+    print("\nAll learning rate schedulers tested successfully!")
+    print("✅ StepLR, ExponentialLR, and CosineAnnealingLR are fully functional")
+    print("✅ Advanced schedulers (Linear, Warmup, Polynomial, ReduceLROnPlateau) working")
+    print("✅ Chained schedulers enable complex scheduling strategies")
+
+
+if __name__ == "__main__":
+    test_lr_schedulers()

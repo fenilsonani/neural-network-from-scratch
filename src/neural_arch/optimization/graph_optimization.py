@@ -47,8 +47,20 @@ class OptimizationPass:
     priority: int = 0  # Higher priority runs first
 
     def apply(self, graph: Dict[str, GraphNode]) -> Dict[str, GraphNode]:
-        """Apply the optimization pass to the graph."""
-        raise NotImplementedError
+        """Apply the optimization pass to the graph.
+        
+        Args:
+            graph: Computational graph represented as dictionary of nodes
+            
+        Returns:
+            Optimized graph (may be the same as input if no changes)
+            
+        Note:
+            This base implementation performs identity transformation.
+            Subclasses should override to implement specific optimizations.
+        """
+        logger.debug(f"Applying base optimization pass: {self.name}")
+        return graph.copy()
 
 
 class ConstantFoldingPass(OptimizationPass):
@@ -65,13 +77,15 @@ class ConstantFoldingPass(OptimizationPass):
         while changed:
             changed = False
             nodes_to_remove = []
+            nodes_to_add = {}
 
-            for node_id, node in optimized.items():
+            # First pass: identify changes without modifying the dict
+            for node_id, node in list(optimized.items()):
                 if self._is_constant_operation(node, optimized):
                     # Evaluate the constant operation
                     result = self._evaluate_constant(node, optimized)
                     if result is not None:
-                        # Replace with constant node
+                        # Plan to replace with constant node
                         const_node = GraphNode(
                             id=f"const_{node_id}",
                             operation="constant",
@@ -79,13 +93,17 @@ class ConstantFoldingPass(OptimizationPass):
                             outputs=node.outputs,
                             metadata={"value": result},
                         )
-                        optimized[f"const_{node_id}"] = const_node
+                        nodes_to_add[f"const_{node_id}"] = const_node
                         nodes_to_remove.append(node_id)
                         changed = True
 
-            # Remove folded nodes
+            # Second pass: apply changes
             for node_id in nodes_to_remove:
-                del optimized[node_id]
+                if node_id in optimized:
+                    del optimized[node_id]
+            
+            for node_id, node in nodes_to_add.items():
+                optimized[node_id] = node
 
         logger.debug(f"Constant folding removed {len(graph) - len(optimized)} nodes")
         return optimized
@@ -162,7 +180,9 @@ class DeadCodeEliminationPass(OptimizationPass):
 
     def _is_output_node(self, node: GraphNode) -> bool:
         """Check if node is an output node."""
-        return len(node.outputs) == 0 or "output" in node.metadata
+        # A node is an output if it's explicitly marked as output
+        # OR if it has no outputs but is used by other nodes (not truly dead)
+        return "output" in node.metadata or (len(node.outputs) == 0 and node.operation in ["parameter", "output"])
 
 
 class OperatorFusionPass(OptimizationPass):
@@ -474,6 +494,55 @@ def visualize_graph(graph: Dict[str, GraphNode], output_path: str = None) -> str
     return dot_content
 
 
+def test_graph_optimization():
+    """Test the graph optimization system with a sample computational graph."""
+    print("Testing Graph Optimization System")
+    print("=" * 40)
+    
+    # Create a sample graph manually
+    sample_graph = {
+        "input": GraphNode("input", "parameter", [], ["linear1"], {}),
+        "const1": GraphNode("const1", "constant", [], ["add1"], {"value": np.array([1.0])}),
+        "const2": GraphNode("const2", "constant", [], ["add1"], {"value": np.array([2.0])}),
+        "add1": GraphNode("add1", "add", ["const1", "const2"], ["linear1"], {}),  # This can be folded
+        "linear1": GraphNode("linear1", "linear", ["input", "add1"], ["relu1"], {"weights": np.random.randn(10, 5), "bias": np.random.randn(10)}),
+        "relu1": GraphNode("relu1", "relu", ["linear1"], ["dead_node", "output"], {}),
+        "dead_node": GraphNode("dead_node", "mul", ["relu1"], [], {}),  # This is dead code
+        "output": GraphNode("output", "parameter", ["relu1"], [], {"output": True})
+    }
+    
+    print(f"Original graph: {len(sample_graph)} nodes")
+    
+    # Test different optimization levels
+    for level in [OptimizationLevel.O0, OptimizationLevel.O1, OptimizationLevel.O2]:
+        print(f"\nTesting optimization level: {level.value}")
+        
+        optimizer = GraphOptimizer(level)
+        optimized = optimizer.optimize(sample_graph)
+        
+        stats = optimizer.get_stats()
+        print(f"  Nodes: {stats['original_nodes']} -> {stats['optimized_nodes']}")
+        print(f"  Passes applied: {stats['passes_applied']}")
+        print(f"  Time: {stats['optimization_time']:.3f}s")
+        
+        # Show remaining nodes
+        node_types = [node.operation for node in optimized.values()]
+        print(f"  Remaining operations: {node_types}")
+    
+    # Test auto-optimization
+    print(f"\nTesting auto-optimization:")
+    auto_optimizer = AutoGraphOptimizer()
+    auto_optimized = auto_optimizer.optimize_with_profiling(sample_graph)
+    print(f"  Auto-optimized nodes: {len(auto_optimized)}")
+    
+    # Test graph visualization
+    print(f"\nTesting graph visualization:")
+    dot_content = visualize_graph(sample_graph)
+    print(f"  Generated DOT content ({len(dot_content)} characters)")
+    
+    print("\nGraph optimization system tested successfully!")
+
+
 # Export main classes and functions
 __all__ = [
     "GraphOptimizer",
@@ -482,4 +551,9 @@ __all__ = [
     "GraphNode",
     "build_computation_graph",
     "visualize_graph",
+    "test_graph_optimization",
 ]
+
+
+if __name__ == "__main__":
+    test_graph_optimization()

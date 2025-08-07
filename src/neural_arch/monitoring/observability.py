@@ -150,12 +150,32 @@ class MetricsBackend:
     """Base class for metrics backends."""
     
     def emit_metric(self, metric: MetricPoint):
-        """Emit a metric to the backend."""
-        raise NotImplementedError
+        """Emit a metric to the backend.
+        
+        Args:
+            metric: Metric data point to emit
+            
+        Note:
+            This base implementation logs metrics to console.
+            Subclasses should override for specific backend behavior.
+        """
+        labels_str = ", ".join(f"{k}={v}" for k, v in metric.labels.items())
+        timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(metric.timestamp))
+        print(f"[{timestamp_str}] {metric.metric_type.value.upper()}: {metric.name}={metric.value} [{labels_str}]")
     
     def emit_trace(self, span: TraceSpan):
-        """Emit a trace span to the backend."""
-        raise NotImplementedError
+        """Emit a trace span to the backend.
+        
+        Args:
+            span: Trace span to emit
+            
+        Note:
+            This base implementation logs traces to console.
+            Subclasses should override for specific backend behavior.
+        """
+        duration_str = f" ({span.duration*1000:.2f}ms)" if span.duration else " (ongoing)"
+        timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(span.start_time))
+        print(f"[{timestamp_str}] TRACE: {span.operation_name}{duration_str} [trace_id={span.trace_id[:8]}...] status={span.status}")
     
     def flush(self):
         """Flush any buffered metrics."""
