@@ -32,9 +32,18 @@ class LargeEmailDataset:
     def __init__(self, dataset_path: Optional[str] = None):
         """Initialize with large dataset."""
         
+        # Priority order for dataset loading
         if dataset_path and os.path.exists(dataset_path):
             print(f"📂 Loading dataset from {dataset_path}...")
             with open(dataset_path, 'rb') as f:
+                self.splits = pickle.load(f)
+        elif os.path.exists('email_dataset_massive.pkl'):
+            print("📂 Loading massive dataset...")
+            with open('email_dataset_massive.pkl', 'rb') as f:
+                self.splits = pickle.load(f)
+        elif os.path.exists('email_dataset_large.pkl'):
+            print("📂 Loading large dataset...")
+            with open('email_dataset_large.pkl', 'rb') as f:
                 self.splits = pickle.load(f)
         elif os.path.exists('email_dataset_splits.pkl'):
             print("📂 Loading prepared dataset splits...")
@@ -137,87 +146,129 @@ class LargeEmailDataset:
 class EmailReplyModel:
     """Model for email reply generation using Differential Attention."""
     
-    def __init__(self, vocab_size: int, d_model: int = 256, n_heads: int = 8, dropout: float = 0.1):
-        """Initialize the model."""
+    def __init__(self, vocab_size: int, d_model: int = 512, n_heads: int = 8, n_layers: int = 2, dropout: float = 0.1):
+        """Initialize the model with better architecture."""
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.n_heads = n_heads
+        self.n_layers = n_layers
         self.dropout = dropout
         
-        # Model components
+        # Model components with better initialization
         self.embedding = Embedding(vocab_size, d_model)
-        self.diff_block = DifferentialTransformerBlock(
-            d_model=d_model,
-            n_heads=n_heads,
-            lambda_init=0.5
-        )
-        self.output_proj = Linear(d_model, vocab_size)
+        self._init_weights()
         
-        # Optimizer
-        self.optimizer = Adam(
-            [
-                self.embedding.weight,
-                self.diff_block.attention.W_q1,
-                self.diff_block.attention.W_k1,
-                self.diff_block.attention.W_v1,
-                self.diff_block.attention.W_q2,
-                self.diff_block.attention.W_k2,
-                self.diff_block.attention.W_v2,
-                self.diff_block.attention.W_o,
-                self.diff_block.attention.lambda_param,
-                self.output_proj.weight
-            ],
-            lr=0.001
-        )
+        # Stack multiple transformer blocks for better learning
+        self.transformer_blocks = []
+        for _ in range(n_layers):
+            block = DifferentialTransformerBlock(
+                d_model=d_model,
+                n_heads=n_heads,
+                lambda_init=0.5
+            )
+            self.transformer_blocks.append(block)
+        
+        # Output projection with bias for better convergence
+        self.output_proj = Linear(d_model, vocab_size, bias=True)
+        
+        # Collect all parameters
+        params = [self.embedding.weight, self.output_proj.weight]
+        for block in self.transformer_blocks:
+            params.extend([
+                block.attention.W_q1,
+                block.attention.W_k1,
+                block.attention.W_v1,
+                block.attention.W_q2,
+                block.attention.W_k2,
+                block.attention.W_v2,
+                block.attention.W_o,
+                block.attention.lambda_param
+            ])
+        
+        # Optimizer with lower learning rate for stability
+        self.optimizer = Adam(params, lr=0.0001)  # Much lower LR
+        self.initial_lr = 0.0001
+        self.current_lr = self.initial_lr
         
         # Training history
         self.train_losses = []
         self.val_losses = []
         self.best_val_loss = float('inf')
     
+    def _init_weights(self):
+        """Xavier/He initialization for better convergence."""
+        # Initialize embeddings
+        scale = np.sqrt(2.0 / (self.vocab_size + self.d_model))
+        self.embedding.weight.data = np.random.randn(self.vocab_size, self.d_model) * scale
+    
+    def adjust_learning_rate(self, epoch: int, total_epochs: int):
+        """Cosine annealing learning rate schedule."""
+        self.current_lr = self.initial_lr * (1 + np.cos(np.pi * epoch / total_epochs)) / 2
+        self.optimizer.lr = self.current_lr
+    
     def forward(self, input_ids: np.ndarray) -> Tensor:
         """Forward pass through the model."""
         # Convert to tensor
         x = Tensor(input_ids, requires_grad=False)
         
-        # Embed
+        # Embed with scaling
         x = self.embedding(x)
+        x.data = x.data * np.sqrt(self.d_model)  # Scale embeddings
         
-        # Apply differential transformer block
-        x = self.diff_block(x)
+        # Apply multiple transformer blocks
+        for block in self.transformer_blocks:
+            x = block(x)
         
         # Project to vocabulary
         logits = self.output_proj(x)
         
         return logits
     
-    def compute_loss(self, logits: Tensor, targets: np.ndarray) -> Tensor:
-        """Compute cross-entropy loss."""
+    def compute_loss(self, logits: Tensor, targets: np.ndarray, pad_idx: int = 0) -> Tensor:
+        """Compute cross-entropy loss with label smoothing."""
         batch_size, seq_len, vocab_size = logits.shape
         
         # Reshape for loss computation
         logits_flat = logits.data.reshape(-1, vocab_size)
         targets_flat = targets.reshape(-1)
         
-        # Compute softmax
-        probs = np.exp(logits_flat - np.max(logits_flat, axis=1, keepdims=True))
-        probs = probs / np.sum(probs, axis=1, keepdims=True)
+        # Label smoothing
+        smoothing = 0.1
+        confidence = 1.0 - smoothing
         
-        # Cross-entropy loss
-        loss_values = []
+        # Create smooth targets
+        smooth_targets = np.full((len(targets_flat), vocab_size), 
+                                smoothing / (vocab_size - 1))
+        
         for i, target in enumerate(targets_flat):
-            if target > 0:  # Ignore padding
-                loss_values.append(-np.log(probs[i, target] + 1e-10))
+            if target != pad_idx:
+                smooth_targets[i, target] = confidence
+                smooth_targets[i, pad_idx] = 0
         
-        if loss_values:
-            loss = np.mean(loss_values)
+        # Compute log softmax more stably
+        log_probs = logits_flat - np.max(logits_flat, axis=1, keepdims=True)
+        log_probs = log_probs - np.log(np.sum(np.exp(log_probs), axis=1, keepdims=True) + 1e-10)
+        
+        # Cross-entropy with label smoothing
+        num_active = np.sum(targets_flat != pad_idx)
+        if num_active > 0:
+            loss = -np.sum(smooth_targets * log_probs) / num_active
         else:
             loss = 0.0
         
-        return Tensor(np.array(loss), requires_grad=True)
+        # Create gradient for backprop
+        loss_tensor = Tensor(np.array(loss), requires_grad=True)
+        
+        if num_active > 0:
+            exp_logits = np.exp(log_probs)
+            grad = (exp_logits - smooth_targets) / num_active
+            grad[targets_flat == pad_idx] = 0
+            logits.grad = grad.reshape(batch_size, seq_len, vocab_size)
+        
+        return loss_tensor
     
     def train_step(self, emails: np.ndarray, replies: np.ndarray) -> float:
-        """Single training step."""
+        """Single training step with gradient clipping."""
         # Forward pass
         logits = self.forward(emails)
         
@@ -227,6 +278,9 @@ class EmailReplyModel:
         # Backward pass
         loss.backward()
         
+        # Gradient clipping to prevent explosion
+        self._clip_gradients(max_norm=1.0)
+        
         # Update weights
         self.optimizer.step()
         
@@ -234,6 +288,22 @@ class EmailReplyModel:
         self.optimizer.zero_grad()
         
         return float(loss.data)
+    
+    def _clip_gradients(self, max_norm: float = 1.0):
+        """Clip gradients to prevent explosion."""
+        total_norm = 0
+        
+        for param in self.optimizer.parameters:
+            if hasattr(param, 'grad') and param.grad is not None:
+                total_norm += np.sum(param.grad ** 2)
+        
+        total_norm = np.sqrt(total_norm)
+        
+        if total_norm > max_norm:
+            scale = max_norm / total_norm
+            for param in self.optimizer.parameters:
+                if hasattr(param, 'grad') and param.grad is not None:
+                    param.grad *= scale
     
     def evaluate(self, dataset: LargeEmailDataset, batch_size: int = 32, split: str = 'val') -> float:
         """Evaluate model on validation or test set."""
@@ -321,7 +391,7 @@ class EmailReplyModel:
 
 
 def train_model(
-    epochs: int = 50,
+    epochs: int = 100,
     batch_size: int = 32,
     checkpoint_dir: str = "checkpoints",
     resume_from: Optional[str] = None
@@ -338,15 +408,16 @@ def train_model(
     print("\n📊 Loading dataset...")
     dataset = LargeEmailDataset()
     
-    # Create model
-    print("\n🧠 Initializing model...")
+    # Create model with better architecture
+    print("\n🧠 Initializing optimized model...")
     model = EmailReplyModel(
         vocab_size=dataset.vocab_size,
-        d_model=256,
+        d_model=512,  # Larger model for better capacity
         n_heads=8,
+        n_layers=2,    # Multiple layers
         dropout=0.1
     )
-    print(f"Model parameters: d_model={model.d_model}, n_heads={model.n_heads}")
+    print(f"Model parameters: d_model={model.d_model}, n_heads={model.n_heads}, n_layers={model.n_layers}")
     
     start_epoch = 0
     
@@ -363,9 +434,12 @@ def train_model(
     for epoch in range(start_epoch, epochs):
         epoch_start = time.time()
         
+        # Adjust learning rate
+        model.adjust_learning_rate(epoch, epochs)
+        
         # Training phase
         train_losses = []
-        n_train_batches = min(100, len(dataset.train_data) // batch_size)
+        n_train_batches = min(200, len(dataset.train_data) // batch_size)
         
         with tqdm(total=n_train_batches, desc=f"Epoch {epoch+1}/{epochs}") as pbar:
             for _ in range(n_train_batches):
@@ -391,6 +465,7 @@ def train_model(
         print(f"Epoch {epoch+1}/{epochs} - "
               f"Train Loss: {avg_train_loss:.4f} - "
               f"Val Loss: {val_loss:.4f} - "
+              f"LR: {model.current_lr:.6f} - "
               f"Lambda: {lambda_mean:.3f}±{lambda_std:.3f} - "
               f"Time: {epoch_time:.1f}s")
         
